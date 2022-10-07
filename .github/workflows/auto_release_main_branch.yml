@@ -5,7 +5,7 @@ on:
 
 jobs:
   pre-release:
-    name: "Pre Release"
+    name: "Auto Release"
     runs-on: "ubuntu-latest"
 
     steps:
