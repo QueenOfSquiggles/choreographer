@@ -1,0 +1,26 @@
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  pre-release:
+    name: "Pre Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: zip addon
+        run: | # this zips the addons folder into an archive we can release
+          zip -r choreograper.zip ./addons
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: "Development Build"
+          files: |
+            LICENSE.txt
+            choreographer.zip
+      - name: cleanup
+        run:
+          rm choreographer.zip
