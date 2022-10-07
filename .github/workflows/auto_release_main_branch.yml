@@ -21,7 +21,7 @@ jobs:
           files: |
             LICENSE.txt
             choreographer.zip
+      - name: debugging
+        run: ls
       - name: cleanup
-        run:
-          ls
-          rm choreographer.zip
+        run: rm choreographer.zip
