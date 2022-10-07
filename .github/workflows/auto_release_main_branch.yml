@@ -23,4 +23,5 @@ jobs:
             choreographer.zip
       - name: cleanup
         run:
+          ls
           rm choreographer.zip
