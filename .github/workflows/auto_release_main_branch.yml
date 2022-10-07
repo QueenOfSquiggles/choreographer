@@ -9,9 +9,13 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
+      - name: list files
+        run: ls -la
+
       - name: zip addon
         run: | # this zips the addons folder into an archive we can release
-          zip -r choreographer addons
+          zip -r choreographer.zip ./addons/
+          
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -21,5 +25,6 @@ jobs:
           files: |
             LICENSE.txt
             choreographer.zip
+            
       - name: cleanup
         run: rm choreographer.zip
