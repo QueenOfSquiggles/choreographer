@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: zip addon
         run: | # this zips the addons folder into an archive we can release
-          zip -r -y choreograper.zip . -i ./addons
+          zip -r -y choreographer.zip . -i ./addons
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
