@@ -12,9 +12,14 @@ jobs:
       - name: list files
         run: ls -la
 
-      - name: zip addon
-        run: | # this zips the addons folder into an archive we can release
-          zip -r choreographer.zip ./addons/
+      - name: action-zip
+        uses: montudor/action-zip@v1.0.0
+        with:
+          args: zip -qq -r choreographer.zip addons
+
+#      - name: zip addon
+#        run: | # this zips the addons folder into an archive we can release
+#          zip -r choreographer.zip ./addons/
           
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
