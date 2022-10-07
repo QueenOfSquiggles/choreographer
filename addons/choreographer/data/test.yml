@@ -1,0 +1,11 @@
+bytecode:
+  - 012145: test line code
+  - 124886: another line code
+  - 012145: test line code
+
+meta:
+  name: Test Graph
+
+nodes:
+  _012145: "{JSON Formatted Data??}"
+  _124886: "{JSON Formatted Data??}"

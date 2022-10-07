@@ -1,0 +1,37 @@
+[gd_resource type="VisualShader" load_steps=3 format=3 uid="uid://bbjvjt7m4b6ix"]
+
+[sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_7aop1"]
+parameter_name = "Texture2DParameter"
+texture_type = 1
+texture_filter = 1
+texture_repeat = 1
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_w7qil"]
+output_port_for_preview = 0
+source = 5
+
+[resource]
+code = "shader_type spatial;
+uniform sampler2D Texture2DParameter : source_color, filter_nearest, repeat_enable;
+
+
+
+void fragment() {
+
+	vec4 n_out3p0;
+// Texture2D:3
+	n_out3p0 = texture(Texture2DParameter, UV);
+
+
+// Output:0
+	ALBEDO = vec3(n_out3p0.xyz);
+
+
+}
+"
+graph_offset = Vector2(-440.088, -132.115)
+nodes/fragment/2/node = SubResource("VisualShaderNodeTexture2DParameter_7aop1")
+nodes/fragment/2/position = Vector2(-720, 80)
+nodes/fragment/3/node = SubResource("VisualShaderNodeTexture_w7qil")
+nodes/fragment/3/position = Vector2(-200, 100)
+nodes/fragment/connections = PackedInt32Array(2, 0, 3, 2, 3, 0, 0, 0)

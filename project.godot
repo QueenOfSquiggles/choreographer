@@ -11,8 +11,13 @@ config_version=5
 [application]
 
 config/name="Choreographer"
-config/features=PackedStringArray("4.0")
+run/main_scene="res://test/test_node.tscn"
+config/features=PackedStringArray("4.0", "C#")
 config/icon="res://icon.png"
+
+[dotnet]
+
+project/assembly_name="Choreographer"
 
 [rendering]
 
