@@ -70,3 +70,22 @@ Please refer to the Design.md file which will be updated with design plans if pl
 # Contact
 
 QueenOfSquiggles - Twitter: [@OfSquiggles](https://twitter.com/OfSquiggles)
+
+# Licensing
+
+The current license is listed in License.txt, which is the MIT License, following Godot Engine's lead.
+
+The goal of using this license is to be as permissive as possible, while still protecting the developers and contributors from any potential bad actors.
+
+The simple, human readable terms are this: Feel free to use this in public, commercial solutions, and any project you could normally create legally in Godot.
+
+Attribution is **greatly** appreciated. If you would like to provide an attribution for this extension and its developers, you can list it/us as:
+
+```
+Choreographer (c11r)
+developers:
+
+QueenOfSquiggles
+
+```
+This will be updated to include contributors as listed on GitHub
