@@ -67,6 +67,13 @@ Please refer to the Design.md file which will be updated with design plans if pl
 ~~Issues will be available to be worked on.~~
 ~~Pull Requests are for solving open issues.~~
 
+## Financial Help
+
+Direct code and open issues will help with development. But another consideration is money in pocket. If you would like to contribute financially to the development of this project, you can donate to the team individually. Perhaps at some point we will have a single common system, but for now it is on an individual basis:
+
+##### Support QueenOfSquiggles
+- [Kofi](https://ko-fi.com/queenofsquiggles)
+
 # Contact
 
 QueenOfSquiggles - Twitter: [@OfSquiggles](https://twitter.com/OfSquiggles)
