@@ -67,12 +67,21 @@ Please refer to the Design.md file which will be updated with design plans if pl
 ~~Issues will be available to be worked on.~~
 ~~Pull Requests are for solving open issues.~~
 
+# Development
+
+The main branch will track the latest version of godot, with other branches being broken down into "development" and "stable" versions. For example, the "3.5.1-development" would be an unstable development branch for Godot Engine version 3.5.1 (the latest stable version as or writing). And "3.5.1-stable" would be a PR-only branch which is almost guaranteed to be stable for development.
+
+Because this is currently be developed as a "Module" for godot, it does need to be compiled along with the Godot Engine as well as using custom export formats. In the port to Godot 4.X, this is expected to change, but at the current moment, development is targeting 3.5.1 since that is a stable version. That way, we know that if Godot crashes during development, it's our fault, not a bug in a alpha or beta version.
+
 ## Financial Help
 
 Direct code and open issues will help with development. But another consideration is money in pocket. If you would like to contribute financially to the development of this project, you can donate to the team individually. Perhaps at some point we will have a single common system, but for now it is on an individual basis:
 
 ##### Support QueenOfSquiggles
 - [Kofi](https://ko-fi.com/queenofsquiggles)
+
+
+> *This section will be expanded should team members be added <3*
 
 # Contact
 
