@@ -1,0 +1,26 @@
+# SCsub
+from glob import glob
+
+Import('env')
+
+sources = glob("*.cpp")
+sources += glob("**/*.cpp")
+
+module_env = env.Clone()
+module_env.Append(CCFLAGS=['-O2'])
+
+if ARGUMENTS.get('c11r', 'static') == 'dynamic':
+    # Shared lib compilation
+    print("Compiling C11R modules as shared lib")
+
+    module_env.Append(CCFLAGS=['-fPIC'])
+    module_env['LIBS'] = []
+    shared_lib = module_env.SharedLibrary(target='#bin/c11r', source=sources)
+    shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
+    env.Append(LIBS=[shared_lib_shim])
+    env.Append(LIBPATH=['#bin'])
+else:
+    # Static compilation
+    print("Compiling C11R module as static lib")
+
+    module_env.add_source_files(env.modules_sources, sources)
