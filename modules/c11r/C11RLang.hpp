@@ -4,11 +4,11 @@
 #include "core/script_language.h"
 
 class C11RScriptInstance;
-class C11RScriptNodeInstance;
 class C11RScript;
+class BlockInstance;
 
-class C11RScriptNode : public Resource {
-	GDCLASS(C11RScriptNode, Resource);
+class Block : public Resource {
+	GDCLASS(Block, Resource);
 
 	friend class C11RScript;
 
@@ -22,11 +22,15 @@ class C11RScriptNode : public Resource {
 
 	void validate_input_default_values();
 
+	void _set_block_namespace(const String &p_namespace);
+	String _get_block_namespace();
+
 protected:
 	void ports_changed_notify();
 	static void _bind_methods();
 
 public:
+	String block_namespace = "core";
 	Ref<C11RScript> get_visual_script() const;
 
 	virtual int get_output_sequence_port_count() const = 0;
@@ -53,7 +57,7 @@ public:
 	void set_breakpoint(bool p_breakpoint);
 	bool is_breakpoint() const;
 
-	virtual C11RScriptNodeInstance *instance(C11RScriptInstance *p_instance) = 0;
+	virtual BlockInstance *instance(C11RScriptInstance *p_instance) = 0;
 
 	struct TypeGuess {
 		Variant::Type type;
@@ -67,10 +71,10 @@ public:
 
 	virtual TypeGuess guess_output_type(TypeGuess *p_inputs, int p_output) const;
 
-	C11RScriptNode();
+	Block();
 };
 
-class C11RScriptNodeInstance {
+class BlockInstance {
 	friend class C11RScriptInstance;
 	friend class C11RScriptLanguage; //for debugger
 
@@ -82,9 +86,9 @@ class C11RScriptNodeInstance {
 
 	int id;
 	int sequence_index;
-	C11RScriptNodeInstance **sequence_outputs;
+	BlockInstance **sequence_outputs;
 	int sequence_output_count;
-	Vector<C11RScriptNodeInstance *> dependencies;
+	Vector<BlockInstance *> dependencies;
 	int *input_ports;
 	int input_port_count;
 	int *output_ports;
@@ -92,7 +96,7 @@ class C11RScriptNodeInstance {
 	int working_mem_idx;
 	int pass_idx;
 
-	C11RScriptNode *base;
+	Block *base;
 
 public:
 	enum StartMode {
@@ -125,16 +129,16 @@ public:
 
 	virtual int step(const Variant **p_inputs, Variant **p_outputs, StartMode p_start_mode, Variant *p_working_mem, Variant::CallError &r_error, String &r_error_str) = 0; //do a step, return which sequence port to go out
 
-	Ref<C11RScriptNode> get_base_node() { return Ref<C11RScriptNode>(base); }
+	Ref<Block> get_base_node() { return Ref<Block>(base); }
 
-	C11RScriptNodeInstance();
-	virtual ~C11RScriptNodeInstance();
+	BlockInstance();
+	virtual ~BlockInstance();
 };
 
 class C11RScript : public Script {
 	GDCLASS(C11RScript, Script);
 
-	RES_BASE_EXTENSION("vs");
+	RES_BASE_EXTENSION("c11r");
 
 public:
 	struct SequenceConnection {
@@ -180,7 +184,7 @@ private:
 	struct Function {
 		struct NodeData {
 			Point2 pos;
-			Ref<C11RScriptNode> node;
+			Ref<Block> node;
 		};
 
 		Map<int, NodeData> nodes;
@@ -197,7 +201,7 @@ private:
 	};
 
 	struct Variable {
-		Map<int, Ref<C11RScriptNode>> nodes;
+		Map<int, Ref<Block>> nodes;
 		PropertyInfo info;
 		Variant default_value;
 		bool _export;
@@ -244,10 +248,10 @@ public:
 	int get_function_node_id(const StringName &p_name) const;
 	void set_tool_enabled(bool p_enabled);
 
-	void add_node(const StringName &p_func, int p_id, const Ref<C11RScriptNode> &p_node, const Point2 &p_pos = Point2());
+	void add_node(const StringName &p_func, int p_id, const Ref<Block> &p_node, const Point2 &p_pos = Point2());
 	void remove_node(const StringName &p_func, int p_id);
 	bool has_node(const StringName &p_func, int p_id) const;
-	Ref<C11RScriptNode> get_node(const StringName &p_func, int p_id) const;
+	Ref<Block> get_node(const StringName &p_func, int p_id) const;
 	void set_node_position(const StringName &p_func, int p_id, const Point2 &p_pos);
 	Point2 get_node_position(const StringName &p_func, int p_id) const;
 	void get_node_list(const StringName &p_func, List<int> *r_nodes) const;
@@ -339,7 +343,7 @@ class C11RScriptInstance : public ScriptInstance {
 	Ref<C11RScript> script;
 
 	Map<StringName, Variant> variables; //using variable path, not script
-	Map<int, C11RScriptNodeInstance *> instances;
+	Map<int, BlockInstance *> instances;
 
 	struct Function {
 		int node;
@@ -358,8 +362,8 @@ class C11RScriptInstance : public ScriptInstance {
 
 	StringName source;
 
-	void _dependency_step(C11RScriptNodeInstance *node, int p_pass, int *pass_stack, const Variant **input_args, Variant **output_args, Variant *variant_stack, Variant::CallError &r_error, String &error_str, C11RScriptNodeInstance **r_error_node);
-	Variant _call_internal(const StringName &p_method, void *p_stack, int p_stack_size, C11RScriptNodeInstance *p_node, int p_flow_stack_pos, int p_pass, bool p_resuming_yield, Variant::CallError &r_error);
+	void _dependency_step(BlockInstance *node, int p_pass, int *pass_stack, const Variant **input_args, Variant **output_args, Variant *variant_stack, Variant::CallError &r_error, String &error_str, BlockInstance **r_error_node);
+	Variant _call_internal(const StringName &p_method, void *p_stack, int p_stack_size, BlockInstance *p_node, int p_flow_stack_pos, int p_pass, bool p_resuming_yield, Variant::CallError &r_error);
 
 	//Map<StringName,Function> functions;
 	friend class C11RScriptFunctionState; //for yield
@@ -423,7 +427,7 @@ class C11RScriptFunctionState : public Reference {
 	Vector<uint8_t> stack;
 	int working_mem_index;
 	int variant_stack_size;
-	C11RScriptNodeInstance *node;
+	BlockInstance *node;
 	int flow_stack_pos;
 	int pass;
 
@@ -440,10 +444,10 @@ public:
 	~C11RScriptFunctionState();
 };
 
-typedef Ref<C11RScriptNode> (*C11RScriptNodeRegisterFunc)(const String &p_type);
+typedef Ref<Block> (*BlockRegisterFunc)(const String &p_type);
 
 class C11RScriptLanguage : public ScriptLanguage {
-	Map<String, C11RScriptNodeRegisterFunc> register_funcs;
+	Map<String, BlockRegisterFunc> register_funcs;
 
 	struct CallLevel {
 		Variant *stack;
@@ -569,9 +573,9 @@ public:
 	virtual int profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_info_max);
 	virtual int profiling_get_frame_data(ProfilingInfo *p_info_arr, int p_info_max);
 
-	void add_register_func(const String &p_name, C11RScriptNodeRegisterFunc p_func);
+	void add_register_func(const String &p_name, BlockRegisterFunc p_func);
 	void remove_register_func(const String &p_name);
-	Ref<C11RScriptNode> create_node_from_name(const String &p_name);
+	Ref<Block> create_node_from_name(const String &p_name);
 	void get_registered_node_names(List<String> *r_names);
 
 	C11RScriptLanguage();
@@ -580,7 +584,7 @@ public:
 
 //aid for registering
 template <class T>
-static Ref<C11RScriptNode> create_node_generic(const String &p_name) {
+static Ref<Block> create_node_generic(const String &p_name) {
 	Ref<T> node;
 	node.instance();
 	return node;

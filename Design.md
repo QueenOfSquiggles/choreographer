@@ -1,6 +1,6 @@
 # choreographer
 
-An addon for Godot 4 for visual scripting
+An solution for Godot for visual scripting
 
 # Core Design Conceit
 The node and event system needs to be extensible. Ideally in a way that other addons can add their own events, nodes, etc. That way the **Core** can be super streamlined and only contain bare-essentials like type handling and conditionals.

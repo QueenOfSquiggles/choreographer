@@ -2,6 +2,11 @@
 #   Module
 #
 modules/c11r/__pycache__
+modules/c11r/*.o
+modules/c11r/*.os
+modules/c11r/editor/*.os
+**.os
+**.o
 
 #
 #   IDE-Specific
@@ -13,3 +18,4 @@ modules/c11r/__pycache__
 #
 #   Other
 #
+.env

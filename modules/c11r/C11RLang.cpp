@@ -8,19 +8,19 @@
 #include "modules/visual_script/visual_script_nodes.h"
 
 //used by editor, this is not really saved
-void C11RScriptNode::set_breakpoint(bool p_breakpoint) {
+void Block::set_breakpoint(bool p_breakpoint) {
 	breakpoint = p_breakpoint;
 }
 
-bool C11RScriptNode::is_breakpoint() const {
+bool Block::is_breakpoint() const {
 	return breakpoint;
 }
 
-void C11RScriptNode::ports_changed_notify() {
+void Block::ports_changed_notify() {
 	emit_signal("ports_changed");
 }
 
-void C11RScriptNode::set_default_input_value(int p_port, const Variant &p_value) {
+void Block::set_default_input_value(int p_port, const Variant &p_value) {
 	ERR_FAIL_INDEX(p_port, default_input_values.size());
 
 	default_input_values[p_port] = p_value;
@@ -32,16 +32,16 @@ void C11RScriptNode::set_default_input_value(int p_port, const Variant &p_value)
 #endif
 }
 
-Variant C11RScriptNode::get_default_input_value(int p_port) const {
+Variant Block::get_default_input_value(int p_port) const {
 	ERR_FAIL_INDEX_V(p_port, default_input_values.size(), Variant());
 	return default_input_values[p_port];
 }
 
-void C11RScriptNode::_set_default_input_values(Array p_values) {
+void Block::_set_default_input_values(Array p_values) {
 	default_input_values = p_values;
 }
 
-void C11RScriptNode::validate_input_default_values() {
+void Block::validate_input_default_values() {
 	default_input_values.resize(MAX(default_input_values.size(), get_input_value_port_count())); //let it grow as big as possible, we don't want to lose values on resize
 
 	//actually validate on save
@@ -64,7 +64,7 @@ void C11RScriptNode::validate_input_default_values() {
 	}
 }
 
-Array C11RScriptNode::_get_default_input_values() const {
+Array Block::_get_default_input_values() const {
 	//validate on save, since on load there is little info about this
 	Array values = default_input_values;
 	values.resize(get_input_value_port_count());
@@ -72,23 +72,42 @@ Array C11RScriptNode::_get_default_input_values() const {
 	return values;
 }
 
-String C11RScriptNode::get_text() const {
+String Block::get_text() const {
 	return "";
 }
 
-void C11RScriptNode::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_visual_script"), &C11RScriptNode::get_visual_script);
-	ClassDB::bind_method(D_METHOD("set_default_input_value", "port_idx", "value"), &C11RScriptNode::set_default_input_value);
-	ClassDB::bind_method(D_METHOD("get_default_input_value", "port_idx"), &C11RScriptNode::get_default_input_value);
-	ClassDB::bind_method(D_METHOD("ports_changed_notify"), &C11RScriptNode::ports_changed_notify);
-	ClassDB::bind_method(D_METHOD("_set_default_input_values", "values"), &C11RScriptNode::_set_default_input_values);
-	ClassDB::bind_method(D_METHOD("_get_default_input_values"), &C11RScriptNode::_get_default_input_values);
+void Block::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_visual_script"), &Block::get_visual_script);
+	ClassDB::bind_method(D_METHOD("set_default_input_value", "port_idx", "value"), &Block::set_default_input_value);
+	ClassDB::bind_method(D_METHOD("get_default_input_value", "port_idx"), &Block::get_default_input_value);
+	ClassDB::bind_method(D_METHOD("ports_changed_notify"), &Block::ports_changed_notify);
+	ClassDB::bind_method(D_METHOD("_set_default_input_values", "values"), &Block::_set_default_input_values);
+	ClassDB::bind_method(D_METHOD("_get_default_input_values"), &Block::_get_default_input_values);
+	ClassDB::bind_method(D_METHOD("_set_block_namespace"), &Block::_set_block_namespace);
+	ClassDB::bind_method(D_METHOD("_get_block_namespace"), &Block::_get_block_namespace);
+	
+	MethodInfo block_call_func;
+	block_call_func.name="_call_block";
+	block_call_func.arguments.push_back(PropertyInfo(Variant::ARRAY, "arg_stack"));
+	block_call_func.return_val = PropertyInfo(Variant::ARRAY, "return_arg_stack");
+	ClassDB::add_virtual_method("Block", block_call_func);
 
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "_default_input_values", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "_set_default_input_values", "_get_default_input_values");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "block_namespace", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR),"_set_block_namespace", "_get_block_namespace");
 	ADD_SIGNAL(MethodInfo("ports_changed"));
+
 }
 
-C11RScriptNode::TypeGuess C11RScriptNode::guess_output_type(TypeGuess *p_inputs, int p_output) const {
+void Block::_set_block_namespace(const String &p_namespace)
+{
+	block_namespace = p_namespace;
+}
+String Block::_get_block_namespace()
+{
+	return block_namespace;
+}
+
+Block::TypeGuess Block::guess_output_type(TypeGuess *p_inputs, int p_output) const {
 	PropertyInfo pinfo = get_output_value_port_info(p_output);
 
 	TypeGuess tg;
@@ -101,7 +120,7 @@ C11RScriptNode::TypeGuess C11RScriptNode::guess_output_type(TypeGuess *p_inputs,
 	return tg;
 }
 
-Ref<C11RScript> C11RScriptNode::get_visual_script() const {
+Ref<C11RScript> Block::get_visual_script() const {
 	if (scripts_used.size()) {
 		return Ref<C11RScript>(scripts_used.front()->get());
 	}
@@ -109,7 +128,7 @@ Ref<C11RScript> C11RScriptNode::get_visual_script() const {
 	return Ref<C11RScript>();
 }
 
-C11RScriptNode::C11RScriptNode() {
+Block::Block() {
 	breakpoint = false;
 }
 
@@ -117,12 +136,12 @@ C11RScriptNode::C11RScriptNode() {
 
 /////////////////////
 
-C11RScriptNodeInstance::C11RScriptNodeInstance() {
+BlockInstance::BlockInstance() {
 	sequence_outputs = nullptr;
 	input_ports = nullptr;
 }
 
-C11RScriptNodeInstance::~C11RScriptNodeInstance() {
+BlockInstance::~BlockInstance() {
 	if (sequence_outputs) {
 		memdelete_arr(sequence_outputs);
 	}
@@ -214,7 +233,7 @@ void C11RScript::_node_ports_changed(int p_id) {
 	ERR_FAIL_COND(function == StringName());
 
 	Function &func = functions[function];
-	Ref<C11RScriptNode> vsn = func.nodes[p_id].node;
+	Ref<Block> vsn = func.nodes[p_id].node;
 
 	vsn->validate_input_default_values();
 
@@ -262,7 +281,7 @@ void C11RScript::_node_ports_changed(int p_id) {
 #endif
 }
 
-void C11RScript::add_node(const StringName &p_name, int p_id, const Ref<C11RScriptNode> &p_node, const Point2 &p_pos) {
+void C11RScript::add_node(const StringName &p_name, int p_id, const Ref<Block> &p_node, const Point2 &p_pos) {
 	ERR_FAIL_COND(instances.size());
 	ERR_FAIL_COND(p_node.is_null());
 
@@ -302,7 +321,7 @@ void C11RScript::add_node(const StringName &p_name, int p_id, const Ref<C11RScri
 		func.nodes[p_id] = nd;
 	}
 
-	Ref<C11RScriptNode> vsn = p_node;
+	Ref<Block> vsn = p_node;
 	vsn->connect("ports_changed", this, "_node_ports_changed", varray(p_id));
 	vsn->scripts_used.insert(this);
 	vsn->validate_input_default_values(); // Validate when fully loaded
@@ -378,7 +397,7 @@ bool C11RScript::has_node(const StringName &p_func, int p_id) const {
 	return func.nodes.has(p_id);
 }
 
-Ref<C11RScriptNode> C11RScript::get_node(const StringName &p_name, int p_id) const {
+Ref<Block> C11RScript::get_node(const StringName &p_name, int p_id) const {
 	if (functions.has(p_name)) {
 		const Function &func = functions[p_name];
 		if (func.nodes.has(p_id)) {
@@ -393,7 +412,7 @@ Ref<C11RScriptNode> C11RScript::get_node(const StringName &p_name, int p_id) con
 		}
 	}
 
-	return Ref<C11RScriptNode>();
+	return Ref<Block>();
 }
 
 void C11RScript::set_node_position(const StringName &p_func, int p_id, const Point2 &p_pos) {
@@ -423,7 +442,7 @@ void C11RScript::get_node_list(const StringName &p_func, List<int> *r_nodes) con
 
 	if (variables.has(p_func)) {
 		const Variable &var = variables[p_func];
-		for (const Map<int, Ref<C11RScriptNode>>::Element *E = var.nodes.front(); E; E = E->next()) {
+		for (const Map<int, Ref<Block>>::Element *E = var.nodes.front(); E; E = E->next()) {
 			r_nodes->push_back(E->key());
 		}
 	}
@@ -1401,7 +1420,7 @@ bool C11RScriptInstance::has_method(const StringName &p_method) const {
 //#define VSDEBUG(m_text) print_line(m_text)
 #define VSDEBUG(m_text)
 
-void C11RScriptInstance::_dependency_step(C11RScriptNodeInstance *node, int p_pass, int *pass_stack, const Variant **input_args, Variant **output_args, Variant *variant_stack, Variant::CallError &r_error, String &error_str, C11RScriptNodeInstance **r_error_node) {
+void C11RScriptInstance::_dependency_step(BlockInstance *node, int p_pass, int *pass_stack, const Variant **input_args, Variant **output_args, Variant *variant_stack, Variant::CallError &r_error, String &error_str, BlockInstance **r_error_node) {
 	ERR_FAIL_COND(node->pass_idx == -1);
 
 	if (pass_stack[node->pass_idx] == p_pass) {
@@ -1412,7 +1431,7 @@ void C11RScriptInstance::_dependency_step(C11RScriptNodeInstance *node, int p_pa
 
 	if (!node->dependencies.empty()) {
 		int dc = node->dependencies.size();
-		C11RScriptNodeInstance **deps = node->dependencies.ptrw();
+		BlockInstance **deps = node->dependencies.ptrw();
 
 		for (int i = 0; i < dc; i++) {
 			_dependency_step(deps[i], p_pass, pass_stack, input_args, output_args, variant_stack, r_error, error_str, r_error_node);
@@ -1423,9 +1442,9 @@ void C11RScriptInstance::_dependency_step(C11RScriptNodeInstance *node, int p_pa
 	}
 
 	for (int i = 0; i < node->input_port_count; i++) {
-		int index = node->input_ports[i] & C11RScriptNodeInstance::INPUT_MASK;
+		int index = node->input_ports[i] & BlockInstance::INPUT_MASK;
 
-		if (node->input_ports[i] & C11RScriptNodeInstance::INPUT_DEFAULT_VALUE_BIT) {
+		if (node->input_ports[i] & BlockInstance::INPUT_DEFAULT_VALUE_BIT) {
 			//is a default value (unassigned input port)
 			input_args[i] = &default_values[index];
 		} else {
@@ -1439,14 +1458,14 @@ void C11RScriptInstance::_dependency_step(C11RScriptNodeInstance *node, int p_pa
 
 	Variant *working_mem = node->working_mem_idx >= 0 ? &variant_stack[node->working_mem_idx] : (Variant *)nullptr;
 
-	node->step(input_args, output_args, C11RScriptNodeInstance::START_MODE_BEGIN_SEQUENCE, working_mem, r_error, error_str);
+	node->step(input_args, output_args, BlockInstance::START_MODE_BEGIN_SEQUENCE, working_mem, r_error, error_str);
 	//ignore return
 	if (r_error.error != Variant::CallError::CALL_OK) {
 		*r_error_node = node;
 	}
 }
 
-Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_stack, int p_stack_size, C11RScriptNodeInstance *p_node, int p_flow_stack_pos, int p_pass, bool p_resuming_yield, Variant::CallError &r_error) {
+Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_stack, int p_stack_size, BlockInstance *p_node, int p_flow_stack_pos, int p_pass, bool p_resuming_yield, Variant::CallError &r_error) {
 	Map<StringName, Function>::Element *F = functions.find(p_method);
 	ERR_FAIL_COND_V(!F, Variant());
 	Function *f = &F->get();
@@ -1462,7 +1481,7 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 
 	String error_str;
 
-	C11RScriptNodeInstance *node = p_node;
+	BlockInstance *node = p_node;
 	bool error = false;
 	int current_node_id = f->node;
 	Variant return_value;
@@ -1499,7 +1518,7 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 
 			if (!node->dependencies.empty()) {
 				int dc = node->dependencies.size();
-				C11RScriptNodeInstance **deps = node->dependencies.ptrw();
+				BlockInstance **deps = node->dependencies.ptrw();
 
 				for (int i = 0; i < dc; i++) {
 					_dependency_step(deps[i], p_pass, pass_stack, input_args, output_args, variant_stack, r_error, error_str, &node);
@@ -1516,9 +1535,9 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 				VSDEBUG("INPUT PORTS: " + itos(node->input_port_count));
 
 				for (int i = 0; i < node->input_port_count; i++) {
-					int index = node->input_ports[i] & C11RScriptNodeInstance::INPUT_MASK;
+					int index = node->input_ports[i] & BlockInstance::INPUT_MASK;
 
-					if (node->input_ports[i] & C11RScriptNodeInstance::INPUT_DEFAULT_VALUE_BIT) {
+					if (node->input_ports[i] & BlockInstance::INPUT_DEFAULT_VALUE_BIT) {
 						//is a default value (unassigned input port)
 						input_args[i] = &default_values[index];
 						VSDEBUG("\tPORT " + itos(i) + " DEFAULT VAL");
@@ -1545,16 +1564,16 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 
 		//do step
 
-		C11RScriptNodeInstance::StartMode start_mode;
+		BlockInstance::StartMode start_mode;
 		{
 			if (p_resuming_yield) {
-				start_mode = C11RScriptNodeInstance::START_MODE_RESUME_YIELD;
+				start_mode = BlockInstance::START_MODE_RESUME_YIELD;
 				p_resuming_yield = false; // should resume only the first time
-			} else if (flow_stack && (flow_stack[flow_stack_pos] & C11RScriptNodeInstance::FLOW_STACK_PUSHED_BIT)) {
+			} else if (flow_stack && (flow_stack[flow_stack_pos] & BlockInstance::FLOW_STACK_PUSHED_BIT)) {
 				//if there is a push bit, it means we are continuing a sequence
-				start_mode = C11RScriptNodeInstance::START_MODE_CONTINUE_SEQUENCE;
+				start_mode = BlockInstance::START_MODE_CONTINUE_SEQUENCE;
 			} else {
-				start_mode = C11RScriptNodeInstance::START_MODE_BEGIN_SEQUENCE;
+				start_mode = BlockInstance::START_MODE_BEGIN_SEQUENCE;
 			}
 		}
 
@@ -1568,7 +1587,7 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 			break;
 		}
 
-		if (ret & C11RScriptNodeInstance::STEP_YIELD_BIT) {
+		if (ret & BlockInstance::STEP_YIELD_BIT) {
 			//yielded!
 			if (node->get_working_memory_size() == 0) {
 				r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
@@ -1636,11 +1655,11 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 			ScriptDebugger::get_singleton()->line_poll();
 		}
 #endif
-		int output = ret & C11RScriptNodeInstance::STEP_MASK;
+		int output = ret & BlockInstance::STEP_MASK;
 
 		VSDEBUG("STEP RETURN: " + itos(ret));
 
-		if (ret & C11RScriptNodeInstance::STEP_EXIT_FUNCTION_BIT) {
+		if (ret & BlockInstance::STEP_EXIT_FUNCTION_BIT) {
 			if (node->get_working_memory_size() == 0) {
 				r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 				error_str = RTR("Return value must be assigned to first element of node working memory! Fix your node please.");
@@ -1654,9 +1673,9 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 			break; //exit function requested, bye
 		}
 
-		C11RScriptNodeInstance *next = nullptr; //next node
+		BlockInstance *next = nullptr; //next node
 
-		if ((ret == output || ret & C11RScriptNodeInstance::STEP_FLAG_PUSH_STACK_BIT) && node->sequence_output_count) {
+		if ((ret == output || ret & BlockInstance::STEP_FLAG_PUSH_STACK_BIT) && node->sequence_output_count) {
 			//if no exit bit was set, and has sequence outputs, guess next node
 			if (output >= node->sequence_output_count) {
 				r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
@@ -1678,8 +1697,8 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 			flow_stack[flow_stack_pos] = current_node_id;
 
 			//add stack push bit if requested
-			if (ret & C11RScriptNodeInstance::STEP_FLAG_PUSH_STACK_BIT) {
-				flow_stack[flow_stack_pos] |= C11RScriptNodeInstance::FLOW_STACK_PUSHED_BIT;
+			if (ret & BlockInstance::STEP_FLAG_PUSH_STACK_BIT) {
+				flow_stack[flow_stack_pos] |= BlockInstance::FLOW_STACK_PUSHED_BIT;
 				sequence_bits[node->sequence_index] = true; //remember sequence bit
 				VSDEBUG("NEXT SEQ - FLAG BIT");
 			} else {
@@ -1687,12 +1706,12 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 				VSDEBUG("NEXT SEQ - NORMAL");
 			}
 
-			if (ret & C11RScriptNodeInstance::STEP_FLAG_GO_BACK_BIT) {
+			if (ret & BlockInstance::STEP_FLAG_GO_BACK_BIT) {
 				//go back request
 
 				if (flow_stack_pos > 0) {
 					flow_stack_pos--;
-					node = instances[flow_stack[flow_stack_pos] & C11RScriptNodeInstance::FLOW_STACK_MASK];
+					node = instances[flow_stack[flow_stack_pos] & BlockInstance::FLOW_STACK_MASK];
 					VSDEBUG("NEXT IS GO BACK");
 				} else {
 					VSDEBUG("NEXT IS GO BACK, BUT NO NEXT SO EXIT");
@@ -1708,7 +1727,7 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 					bool found = false;
 
 					for (int i = flow_stack_pos; i >= 0; i--) {
-						if ((flow_stack[i] & C11RScriptNodeInstance::FLOW_STACK_MASK) == next->get_id()) {
+						if ((flow_stack[i] & BlockInstance::FLOW_STACK_MASK) == next->get_id()) {
 							flow_stack_pos = i; //roll back and remove bit
 							flow_stack[i] = next->get_id();
 							sequence_bits[next->sequence_index] = false;
@@ -1750,8 +1769,8 @@ Variant C11RScriptInstance::_call_internal(const StringName &p_method, void *p_s
 
 				for (int i = flow_stack_pos; i >= 0; i--) {
 					VSDEBUG("FS " + itos(i) + " - " + itos(flow_stack[i]));
-					if (flow_stack[i] & C11RScriptNodeInstance::FLOW_STACK_PUSHED_BIT) {
-						node = instances[flow_stack[i] & C11RScriptNodeInstance::FLOW_STACK_MASK];
+					if (flow_stack[i] & BlockInstance::FLOW_STACK_PUSHED_BIT) {
+						node = instances[flow_stack[i] & BlockInstance::FLOW_STACK_MASK];
 						flow_stack_pos = i;
 						found = true;
 						break;
@@ -1867,14 +1886,14 @@ Variant C11RScriptInstance::call(const StringName &p_method, const Variant **p_a
 
 	memset(pass_stack, 0, f->pass_stack_size * sizeof(int));
 
-	Map<int, C11RScriptNodeInstance *>::Element *E = instances.find(f->node);
+	Map<int, BlockInstance *>::Element *E = instances.find(f->node);
 	if (!E) {
 		r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 
 		ERR_FAIL_V_MSG(Variant(), "No C11RScriptFunction node in function.");
 	}
 
-	C11RScriptNodeInstance *node = E->get();
+	BlockInstance *node = E->get();
 
 	if (flow_stack) {
 		flow_stack[0] = node->get_id();
@@ -2040,9 +2059,9 @@ void C11RScriptInstance::create(const Ref<C11RScript> &p_script, Object *p_owner
 
 		//first create the nodes
 		for (const Map<int, C11RScript::Function::NodeData>::Element *F = E->get().nodes.front(); F; F = F->next()) {
-			Ref<C11RScriptNode> node = F->get().node;
+			Ref<Block> node = F->get().node;
 
-			C11RScriptNodeInstance *instance = node->instance(this); //create instance
+			BlockInstance *instance = node->instance(this); //create instance
 			ERR_FAIL_COND(!instance);
 
 			instance->base = node.ptr();
@@ -2072,7 +2091,7 @@ void C11RScriptInstance::create(const Ref<C11RScript> &p_script, Object *p_owner
 			}
 
 			if (instance->sequence_output_count) {
-				instance->sequence_outputs = memnew_arr(C11RScriptNodeInstance *, instance->sequence_output_count);
+				instance->sequence_outputs = memnew_arr(BlockInstance *, instance->sequence_output_count);
 				for (int i = 0; i < instance->sequence_output_count; i++) {
 					instance->sequence_outputs[i] = nullptr; //if it remains null, flow ends here
 				}
@@ -2117,9 +2136,9 @@ void C11RScriptInstance::create(const Ref<C11RScript> &p_script, Object *p_owner
 		for (const Set<C11RScript::DataConnection>::Element *F = E->get().data_connections.front(); F; F = F->next()) {
 			C11RScript::DataConnection dc = F->get();
 			ERR_CONTINUE(!instances.has(dc.from_node));
-			C11RScriptNodeInstance *from = instances[dc.from_node];
+			BlockInstance *from = instances[dc.from_node];
 			ERR_CONTINUE(!instances.has(dc.to_node));
-			C11RScriptNodeInstance *to = instances[dc.to_node];
+			BlockInstance *to = instances[dc.to_node];
 			ERR_CONTINUE(dc.from_port >= from->output_port_count);
 			ERR_CONTINUE(dc.to_port >= to->input_port_count);
 
@@ -2145,9 +2164,9 @@ void C11RScriptInstance::create(const Ref<C11RScript> &p_script, Object *p_owner
 		for (const Set<C11RScript::SequenceConnection>::Element *F = E->get().sequence_connections.front(); F; F = F->next()) {
 			C11RScript::SequenceConnection sc = F->get();
 			ERR_CONTINUE(!instances.has(sc.from_node));
-			C11RScriptNodeInstance *from = instances[sc.from_node];
+			BlockInstance *from = instances[sc.from_node];
 			ERR_CONTINUE(!instances.has(sc.to_node));
-			C11RScriptNodeInstance *to = instances[sc.to_node];
+			BlockInstance *to = instances[sc.to_node];
 			ERR_CONTINUE(sc.from_output >= from->sequence_output_count);
 
 			from->sequence_outputs[sc.from_output] = to;
@@ -2160,14 +2179,14 @@ void C11RScriptInstance::create(const Ref<C11RScript> &p_script, Object *p_owner
 		for (const Map<int, C11RScript::Function::NodeData>::Element *F = E->get().nodes.front(); F; F = F->next()) {
 			ERR_CONTINUE(!instances.has(F->key()));
 
-			Ref<C11RScriptNode> node = F->get().node;
-			C11RScriptNodeInstance *instance = instances[F->key()];
+			Ref<Block> node = F->get().node;
+			BlockInstance *instance = instances[F->key()];
 
 			// connect to default values
 			for (int i = 0; i < instance->input_port_count; i++) {
 				if (instance->input_ports[i] == -1) {
 					//unassigned, connect to default val
-					instance->input_ports[i] = default_values.size() | C11RScriptNodeInstance::INPUT_DEFAULT_VALUE_BIT;
+					instance->input_ports[i] = default_values.size() | BlockInstance::INPUT_DEFAULT_VALUE_BIT;
 					default_values.push_back(node->get_default_input_value(i));
 				}
 			}
@@ -2196,7 +2215,7 @@ C11RScriptInstance::~C11RScriptInstance() {
 	script->instances.erase(owner);
 	C11RScriptLanguage::singleton->lock.unlock();
 
-	for (Map<int, C11RScriptNodeInstance *>::Element *E = instances.front(); E; E = E->next()) {
+	for (Map<int, BlockInstance *>::Element *E = instances.front(); E; E = E->next()) {
 		memdelete(E->get());
 	}
 }
@@ -2456,7 +2475,7 @@ void C11RScriptLanguage::debug_get_stack_level_locals(int p_level, List<String> 
 
 	ERR_FAIL_COND(!_call_stack[l].instance->functions.has(*f));
 
-	C11RScriptNodeInstance *node = _call_stack[l].instance->instances[*_call_stack[l].current_id];
+	BlockInstance *node = _call_stack[l].instance->instances[*_call_stack[l].current_id];
 	ERR_FAIL_COND(!node);
 
 	p_locals->push_back("node_name");
@@ -2473,9 +2492,9 @@ void C11RScriptLanguage::debug_get_stack_level_locals(int p_level, List<String> 
 		//value is trickier
 
 		int in_from = node->input_ports[i];
-		int in_value = in_from & C11RScriptNodeInstance::INPUT_MASK;
+		int in_value = in_from & BlockInstance::INPUT_MASK;
 
-		if (in_from & C11RScriptNodeInstance::INPUT_DEFAULT_VALUE_BIT) {
+		if (in_from & BlockInstance::INPUT_DEFAULT_VALUE_BIT) {
 			p_values->push_back(_call_stack[l].instance->default_values[in_value]);
 		} else {
 			p_values->push_back(_call_stack[l].stack[in_value]);
@@ -2562,7 +2581,7 @@ int C11RScriptLanguage::profiling_get_frame_data(ProfilingInfo *p_info_arr, int 
 
 C11RScriptLanguage *C11RScriptLanguage::singleton = nullptr;
 
-void C11RScriptLanguage::add_register_func(const String &p_name, C11RScriptNodeRegisterFunc p_func) {
+void C11RScriptLanguage::add_register_func(const String &p_name, BlockRegisterFunc p_func) {
 	ERR_FAIL_COND(register_funcs.has(p_name));
 	register_funcs[p_name] = p_func;
 }
@@ -2572,14 +2591,14 @@ void C11RScriptLanguage::remove_register_func(const String &p_name) {
 	register_funcs.erase(p_name);
 }
 
-Ref<C11RScriptNode> C11RScriptLanguage::create_node_from_name(const String &p_name) {
-	ERR_FAIL_COND_V(!register_funcs.has(p_name), Ref<C11RScriptNode>());
+Ref<Block> C11RScriptLanguage::create_node_from_name(const String &p_name) {
+	ERR_FAIL_COND_V(!register_funcs.has(p_name), Ref<Block>());
 
 	return register_funcs[p_name](p_name);
 }
 
 void C11RScriptLanguage::get_registered_node_names(List<String> *r_names) {
-	for (Map<String, C11RScriptNodeRegisterFunc>::Element *E = register_funcs.front(); E; E = E->next()) {
+	for (Map<String, BlockRegisterFunc>::Element *E = register_funcs.front(); E; E = E->next()) {
 		r_names->push_back(E->key());
 	}
 }

@@ -16,6 +16,13 @@ The `c11r` flag can be either `dynamic` or `static`. Dynamic will compile the mo
 scons -j8 custom_modules=../modules c11r=dynamic
 ```
 
+After you have run the previous command, you could also use this command to just compile the module, without recompiling the engine.
+
+```bash
+scons -j8 custom_modules=../modules c11r=dynamic bin/libc11r.<platform>.<arch>.<lib extenstion>
+```
+For example, on Linux 64 bit, it would be `bin/libc11r.x11.tools.64.so`
+
 See [the tutorial](https://docs.godotengine.org/en/stable/development/cpp/custom_modules_in_cpp.html#improving-the-build-system-for-development) for more information on building this way.
 
 ## Help
