@@ -1,9 +1,16 @@
-#pragma once
+#ifndef C11R_EDITOR_H
+#define C11R_EDITOR_H
 
 #include "editor/create_dialog.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/property_editor.h"
-#include "../C11RLang.hpp"
+#include "scene/gui/graph_edit.h"
+
+#include "../c11r_lang.hpp"
+
+// FIXME remove before release builds
+#define TOOLS_ENABLED
+
 
 #ifdef TOOLS_ENABLED
 
@@ -22,7 +29,18 @@ class C11REditor: public ScriptEditorBase
 
     static Clipboard *clipboard;
 
+	RES current_script;
+
+	PanelContainer *inspection_panel;
+	GraphEdit *block_graph;
+	VBoxContainer *tab_options;
+
 protected:
+	void add_tab_options(Control *root);
+	void _change_tab(Control *new_tab);
+
+	void _toggle_inspector_visibility();
+
     static void _bind_methods();
 public:
     virtual void add_syntax_highlighter(SyntaxHighlighter *p_highlighter);
@@ -89,3 +107,5 @@ public:
     ~_C11REditor();
 };
 #endif
+
+#endif // C11R_EDITOR_H

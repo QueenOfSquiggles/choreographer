@@ -1,12 +1,13 @@
 # SCsub
 from glob import glob
 
-Import('env')
+Import("env")
+Import("env_modules")
 
 sources = glob("*.cpp")
 sources += glob("**/*.cpp")
 
-module_env = env.Clone()
+module_env = env_modules.Clone()
 module_env.Append(CCFLAGS=['-O2'])
 
 if ARGUMENTS.get('c11r', 'static') == 'dynamic':

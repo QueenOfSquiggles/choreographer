@@ -33,23 +33,7 @@ If I can make a visual scripting system that can handle a first person controlle
 
 # Serialization Format
 ##### Graph File
-This may be converted to YAML-compliant 
-```
-[bytecode]
-(012348) event "core-tick" begin
-(...) ...
-(012348) event "core-tick" end
-
-[Meta]
-name=""
-theme=""
-# Comments!
-
-[Node Defintions] # basically just a JSON object
-(012348){"type":"core:EventNode", "data":{"event":"core-tick"}}
-(546083){"sub": {"path":"res://......"}, "data":{}}
-(NODE_ID){NODE_GROUP:NODE_TYPE}:{Node JSON data}
-```
+This will need some heavy consideration for how to properly manage it. Ideally we could use the standard Resource file format to be standard with other resources, but might need some extra specification to ensure all needed data can be loaded.
 
 ### Reasoning
 Bytecode at the top, with Node IDs assigned to each execution means that debugging mode can just find the node by ID. And because it's an optional method, we can just not do that when node debugging is off. The bonus is that bytecode at the top means that processing of the file can actually end processing as soon as it hits another heading. So we can stash extra data without affecting runtime

@@ -12,10 +12,17 @@ modules/c11r/editor/*.os
 #   IDE-Specific
 #
 
+# vscode settings
 .vscode
+choreographer.code-workspace
 
+#
+#   Demo Project
+#
+demo/**.import
+demo/.import/
 
 #
 #   Other
 #
-.env
+

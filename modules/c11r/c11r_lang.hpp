@@ -1,4 +1,6 @@
 #pragma once
+#ifndef C11R_LANG_H
+#define C11R_LANG_H
 
 #include "core/os/thread.h"
 #include "core/script_language.h"
@@ -589,3 +591,5 @@ static Ref<Block> create_node_generic(const String &p_name) {
 	node.instance();
 	return node;
 }
+
+#endif // C11R_LANG_H

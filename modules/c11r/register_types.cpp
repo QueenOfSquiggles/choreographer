@@ -1,6 +1,9 @@
 #include "core/engine.h"
 #include "register_types.h"
-#include "editor/C11REditor.hpp"
+
+#include "c11r_lang.hpp"
+#include "editor/c11r_editor.hpp"
+
 C11RScriptLanguage* c11r_script_language = nullptr;
 
 #ifdef TOOLS_ENABLED
@@ -21,35 +24,23 @@ void register_c11r_types()
 	ClassDB::register_class<_C11REditor>();
 	ClassDB::set_current_api(ClassDB::API_CORE);
 	c11r_editor_singleton = memnew(_C11REditor);
-	Engine::get_singleton()->add_singleton(Engine::Singleton("VisualScriptEditor", _C11REditor::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("C11REditor", _C11REditor::get_singleton()));
+
 	C11REditor::register_editor();
 	#endif
-
-// TODO implement an editor to use for this block
-/*
-    #ifdef TOOLS_ENABLED
-    ClassDB::set_current_api(ClassDB::API_EDITOR);
-	ClassDB::register_class<_VisualScriptEditor>(); // registers the editor
-	ClassDB::set_current_api(ClassDB::API_CORE);
-	vs_editor_singleton = memnew(_VisualScriptEditor);
-	Engine::get_singleton()->add_singleton(Engine::Singleton("VisualScriptEditor", _VisualScriptEditor::get_singleton()));
-
-	VisualScriptEditor::register_editor(); // makes the ScriptServer aware of the editor and its callbacks
-    #endif
-*/
 }
 
 void unregister_c11r_types()
 {
     ScriptServer::unregister_language(c11r_script_language);
 	
-#ifdef TOOLS_ENABLED
+	#ifdef TOOLS_ENABLED
 	C11REditor::free_clipboard();
 	if(c11r_editor_singleton)
 	{
 		memdelete(c11r_editor_singleton);
 	}
-#endif
+	#endif
 
     if(c11r_script_language)
     {

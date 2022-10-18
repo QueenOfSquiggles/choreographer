@@ -1,0 +1,95 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://workshop/C11R Editor Design.gd" type="Script" id=1]
+
+[node name="VBoxContainer" type="VBoxContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_editor_description_": "Because ScriptEditorBase is a VBoxContainer, this feels like the natural choice to start from"
+}
+
+[node name="Panel" type="Panel" parent="."]
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+alignment = 2
+
+[node name="GraphEdit" type="GraphEdit" parent="Panel/HBoxContainer"]
+margin_right = 705.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_offset = Vector2( -485, 0 )
+
+[node name="PanelInspection" type="PanelContainer" parent="Panel/HBoxContainer"]
+unique_name_in_owner = true
+margin_left = 709.0
+margin_right = 980.0
+margin_bottom = 600.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/HBoxContainer/PanelInspection"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 264.0
+margin_bottom = 593.0
+
+[node name="Label" type="Label" parent="Panel/HBoxContainer/PanelInspection/VBoxContainer"]
+margin_right = 257.0
+margin_bottom = 31.0
+text = "This is the contextual inspector window.
+The buttons switch between contexts"
+align = 1
+valign = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/HBoxContainer"]
+margin_left = 984.0
+margin_right = 1024.0
+margin_bottom = 600.0
+
+[node name="BtnToggleVisible" type="Button" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_right = 40.0
+margin_bottom = 20.0
+text = "+/-"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_top = 24.0
+margin_right = 40.0
+margin_bottom = 28.0
+
+[node name="Button2" type="Button" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_top = 32.0
+margin_right = 40.0
+margin_bottom = 52.0
+text = "tab1"
+
+[node name="Button3" type="Button" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_top = 56.0
+margin_right = 40.0
+margin_bottom = 76.0
+text = "tab1"
+
+[node name="Button4" type="Button" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_top = 80.0
+margin_right = 40.0
+margin_bottom = 100.0
+text = "tab1"
+
+[node name="Button5" type="Button" parent="Panel/HBoxContainer/VBoxContainer"]
+margin_top = 104.0
+margin_right = 40.0
+margin_bottom = 124.0
+text = "tab1"
+
+[node name="PanelOptions" type="PanelContainer" parent="Panel/HBoxContainer"]
+visible = false
+margin_left = 1010.0
+margin_right = 1024.0
+margin_bottom = 600.0
+
+[connection signal="pressed" from="Panel/HBoxContainer/VBoxContainer/BtnToggleVisible" to="." method="_on_BtnToggleVisible_pressed"]
