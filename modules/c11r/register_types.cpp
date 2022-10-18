@@ -22,6 +22,7 @@ void register_c11r_types()
 	#ifdef TOOLS_ENABLED
     ClassDB::set_current_api(ClassDB::API_EDITOR);
 	ClassDB::register_class<_C11REditor>();
+	ClassDB::register_class<C11REditor>();
 	ClassDB::set_current_api(ClassDB::API_CORE);
 	c11r_editor_singleton = memnew(_C11REditor);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("C11REditor", _C11REditor::get_singleton()));

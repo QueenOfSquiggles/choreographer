@@ -39,10 +39,11 @@ protected:
 	void add_tab_options(Control *root);
 	void _change_tab(Control *new_tab);
 
-	void _toggle_inspector_visibility();
 
     static void _bind_methods();
 public:
+	void _toggle_inspector_visibility();
+
     virtual void add_syntax_highlighter(SyntaxHighlighter *p_highlighter);
 	virtual void set_syntax_highlighter(SyntaxHighlighter *p_highlighter);
 

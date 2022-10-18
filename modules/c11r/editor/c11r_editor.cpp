@@ -111,10 +111,11 @@ static Color _color_from_type(Variant::Type p_type, bool dark_theme = true) {
 
 void C11REditor::add_tab_options(Control *root)
 {
-    Button *button_toggle_visibility = new Button("+/-");
+    Button *button_toggle_visibility = memnew(Button);
+    button_toggle_visibility->set_text("+/-");
     root->add_child(button_toggle_visibility);
     button_toggle_visibility->connect("pressed", this, "_toggle_inspector_visibility");
-    HSeparator *hsep = new HSeparator();
+    HSeparator *hsep = memnew(HSeparator);
     root->add_child(hsep);
     // TODO add tab options
 }
@@ -131,28 +132,41 @@ C11REditor::C11REditor()
     set_process_unhandled_input(true);
 
     // TODO create editor graphics
-    Panel *panel = new Panel();
+    
+    Panel *panel = memnew(Panel);
+    add_child(panel);
     panel->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-    add_child(panel);
-
-    HBoxContainer *hbox = new HBoxContainer();
+    panel->set_anchors_and_margins_preset(Control::PRESET_WIDE);
+    
+    HBoxContainer *hbox = memnew(HBoxContainer);
+    panel->add_child(hbox);
     hbox->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     hbox->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-    panel->add_child(hbox);
+    hbox->set_anchors_and_margins_preset(Control::PRESET_WIDE);
 
-
-	GraphEdit *block_graph = new GraphEdit();
+	GraphEdit *block_graph = memnew(GraphEdit);
+    hbox->add_child(block_graph);
     block_graph->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     block_graph->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-    hbox->add_child(block_graph);
+    block_graph->set_anchors_and_margins_preset(Control::PRESET_WIDE);
 
-    PanelContainer *inspection_panel = new PanelContainer();
+    PanelContainer *inspection_panel = memnew(PanelContainer);
     hbox->add_child(inspection_panel);
+    { // add some debug stuff to panel container
+        Label *lbl = memnew(Label);
+        lbl->set_text("Inspection Panel");
+        inspection_panel->add_child(lbl);
+    }
 
-	VBoxContainer *tab_options = new VBoxContainer();
+	VBoxContainer *tab_options = memnew(VBoxContainer);
     hbox->add_child(tab_options);
 
+
+    // TODO hook up all the signals needed
+    // block_graph signals
+
+    // tab_options signals
     add_tab_options(tab_options);
 }
 
@@ -177,7 +191,16 @@ void C11REditor::_change_tab(Control *new_tab)
 
 void C11REditor::_toggle_inspector_visibility()
 {
-    inspection_panel->set_visible(!inspection_panel->is_visible());
+    if(inspection_panel)
+    { 
+        // FIXME why does this crash?
+        /*
+        bool is_visible = inspection_panel->is_visible();
+
+        if (is_visible) inspection_panel->hide();
+        else inspection_panel->show();
+        */
+    }
 }
 
 static ScriptEditorBase *create_editor(const RES &p_resource) {
@@ -192,6 +215,7 @@ static ScriptEditorBase *create_editor(const RES &p_resource) {
 C11REditor::Clipboard *C11REditor::clipboard = nullptr;
 
 void C11REditor::_bind_methods(){
+
     ClassDB::bind_method(D_METHOD("_toggle_inspector_visibility"), &C11REditor::_toggle_inspector_visibility);
 }
 
