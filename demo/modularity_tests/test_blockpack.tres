@@ -1,0 +1,6 @@
+[gd_resource type="BlockPack" load_steps=2 format=2]
+
+[ext_resource path="res://modularity_tests/test_custom_block.gd" type="Script" id=1]
+
+[resource]
+custom_block_scripts = [ ExtResource( 1 ), null ]

@@ -3,6 +3,7 @@
 
 #include "c11r_lang.hpp"
 #include "editor/c11r_editor.hpp"
+#include "packs/block_pack.hpp"
 
 C11RScriptLanguage* c11r_script_language = nullptr;
 
@@ -18,6 +19,7 @@ void register_c11r_types()
 	ClassDB::register_class<C11RScript>();
 	ClassDB::register_virtual_class<Block>();
 	ClassDB::register_class<C11RScriptFunctionState>();
+	ClassDB::register_class<BlockPack>();
 
 	#ifdef TOOLS_ENABLED
     ClassDB::set_current_api(ClassDB::API_EDITOR);

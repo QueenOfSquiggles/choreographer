@@ -7,10 +7,10 @@
 #include "scene/gui/graph_edit.h"
 
 #include "../c11r_lang.hpp"
+#include "packs/block_pack.hpp"
 
 // FIXME remove before release builds
 #define TOOLS_ENABLED
-
 
 #ifdef TOOLS_ENABLED
 
@@ -36,11 +36,9 @@ class C11REditor: public ScriptEditorBase
 	VBoxContainer *tab_options;
 
 protected:
-	void add_tab_options(Control *root);
 	void _change_tab(Control *new_tab);
-
-
     static void _bind_methods();
+
 public:
 	void _toggle_inspector_visibility();
 
@@ -103,8 +101,12 @@ protected:
 public:
     static _C11REditor *get_singleton() { return singleton; }
 
-    void add_custom_node(const String &p_name, const String &p_namespace, const Ref<Script> & p_script);
-    _C11REditor();
+    void add_custom_block(const String &p_name, const String &p_namespace, const Ref<Script> & p_script);
+    void remove_custom_block(const String &p_name, const String &p_category);
+	void register_block_pack(const Ref<BlockPack> &p_block_pack);
+	void unregister_block_pack(const Ref<BlockPack> &p_block_pack);
+
+	_C11REditor();
     ~_C11REditor();
 };
 #endif

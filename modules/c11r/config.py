@@ -15,7 +15,3 @@ def get_doc_classes():
     return [
         "Block"
     ]
-
-
-def get_icons_path():
-    return "icons"

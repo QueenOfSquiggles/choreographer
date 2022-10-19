@@ -108,18 +108,6 @@ static Color _color_from_type(Variant::Type p_type, bool dark_theme = true) {
     }
 }
 
-
-void C11REditor::add_tab_options(Control *root)
-{
-    Button *button_toggle_visibility = memnew(Button);
-    button_toggle_visibility->set_text("+/-");
-    root->add_child(button_toggle_visibility);
-    button_toggle_visibility->connect("pressed", this, "_toggle_inspector_visibility");
-    HSeparator *hsep = memnew(HSeparator);
-    root->add_child(hsep);
-    // TODO add tab options
-}
-
 C11REditor::C11REditor()
 {
     if(!clipboard)
@@ -133,7 +121,7 @@ C11REditor::C11REditor()
 
     // TODO create editor graphics
     
-    Panel *panel = memnew(Panel);
+    Panel *panel = memnew(Panel); // Panel seems redundant, but it lets us have child nodes that exist outside of bounds as needed.
     add_child(panel);
     panel->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
@@ -145,21 +133,34 @@ C11REditor::C11REditor()
     hbox->set_v_size_flags(Control::SIZE_EXPAND_FILL);
     hbox->set_anchors_and_margins_preset(Control::PRESET_WIDE);
 
-	GraphEdit *block_graph = memnew(GraphEdit);
+	block_graph = memnew(GraphEdit);
     hbox->add_child(block_graph);
     block_graph->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     block_graph->set_v_size_flags(Control::SIZE_EXPAND_FILL);
     block_graph->set_anchors_and_margins_preset(Control::PRESET_WIDE);
 
-    PanelContainer *inspection_panel = memnew(PanelContainer);
+    inspection_panel = memnew(PanelContainer);
+    inspection_panel->set_h_size_flags(Control::SIZE_SHRINK_END); // shrink to minimum size for max graph visibility
+    inspection_panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
     hbox->add_child(inspection_panel);
     { // add some debug stuff to panel container
+        VBoxContainer *vbox = memnew(VBoxContainer);
+        inspection_panel->add_child(vbox);
+
         Label *lbl = memnew(Label);
         lbl->set_text("Inspection Panel");
-        inspection_panel->add_child(lbl);
+        vbox->add_child(lbl);
+
+        Button *btn_do_nothing = memnew(Button);
+        btn_do_nothing->set_text("This button does nothing");
+        vbox->add_child(btn_do_nothing);
+
+        EditorSpinSlider *ed_spin_slider = memnew(EditorSpinSlider);
+        ed_spin_slider->set_value(10.0);
+        vbox->add_child(ed_spin_slider);
     }
 
-	VBoxContainer *tab_options = memnew(VBoxContainer);
+	tab_options = memnew(VBoxContainer);
     hbox->add_child(tab_options);
 
 
@@ -167,7 +168,19 @@ C11REditor::C11REditor()
     // block_graph signals
 
     // tab_options signals
-    add_tab_options(tab_options);
+    Button *button_toggle_visibility = memnew(Button);
+    button_toggle_visibility->set_custom_minimum_size((Size2){16.0f, 16.0f});
+    button_toggle_visibility->set_icon_align(Button::TextAlign::ALIGN_CENTER);
+    button_toggle_visibility->set_icon(Control::get_icon("icon_GUI_visibility_visible", "EditorIcons"));
+    // TODO figure out why the icon isn't loading?? Or at least not visible?
+    button_toggle_visibility->set_text("+");
+    button_toggle_visibility->connect("pressed", this, "_toggle_inspector_visibility");
+    tab_options->add_child(button_toggle_visibility);
+
+    HSeparator *hsep = memnew(HSeparator);
+    tab_options->add_child(hsep);
+ 
+    // TODO add more tab options
 }
 
 C11REditor::~C11REditor()
@@ -180,7 +193,7 @@ void C11REditor::_change_tab(Control *new_tab)
     if (new_tab == nullptr) return;
     int cur_children = inspection_panel->get_child_count();
     for(int i = 0; i < cur_children; i++)
-    { // this should only eval to 1 child. But maybe there's a use case in the future
+    { // this should only eval to 1 child. But maybe there's a use case in the future?
         Node* child = inspection_panel->get_child(0);
         inspection_panel->remove_child(child);
         child->queue_delete();
@@ -191,24 +204,16 @@ void C11REditor::_change_tab(Control *new_tab)
 
 void C11REditor::_toggle_inspector_visibility()
 {
-    if(inspection_panel)
-    { 
-        // FIXME why does this crash?
-        /*
-        bool is_visible = inspection_panel->is_visible();
+    if(inspection_panel == nullptr) return;
 
-        if (is_visible) inspection_panel->hide();
-        else inspection_panel->show();
-        */
-    }
+    bool vis = inspection_panel->is_visible();
+    inspection_panel->set_visible(!vis);
 }
 
 static ScriptEditorBase *create_editor(const RES &p_resource) {
 	if (Object::cast_to<C11RScript>(*p_resource)) {
-        print_line("Creating a C11R editor!");
-		return memnew(C11REditor);
+        return memnew(C11REditor);
 	}
-    print_line("Failed to create a C11REditor");
 	return nullptr;
 }
 
@@ -222,7 +227,6 @@ void C11REditor::_bind_methods(){
 void C11REditor::add_syntax_highlighter(SyntaxHighlighter *p_highlighter){}
 
 void C11REditor::set_syntax_highlighter(SyntaxHighlighter *p_highlighter){}
-
 
 void C11REditor::apply_code(){}
 
@@ -252,7 +256,7 @@ String C11REditor::get_name(){
 }
 
 Ref<Texture> C11REditor::get_icon(){
-    return nullptr;// FIXME
+    return Control::get_icon("c11r_lang", "EditorIcons");
 }
 
 bool C11REditor::is_unsaved()
@@ -324,6 +328,7 @@ static void register_editor_callback()
 	ED_SHORTCUT("choreographer/create_function", TTR("Make Function"), KEY_MASK_CMD + KEY_G);
 	ED_SHORTCUT("choreographer/refresh_nodes", TTR("Refresh Graph"), KEY_MASK_CMD + KEY_R);
 	ED_SHORTCUT("choreographer/edit_member", TTR("Edit Member"), KEY_MASK_CMD + KEY_E);
+	ED_SHORTCUT("choreographer/add_block", TTR("Add Block"), KEY_MASK_SHIFT + KEY_A);
 }
 
 void C11REditor::register_editor(){
@@ -338,8 +343,106 @@ void C11REditor::free_clipboard(){
     }
 }
 
-_C11REditor *_C11REditor::singleton = nullptr;
 
+_C11REditor *_C11REditor::singleton = nullptr;
+Map<String, RefPtr> _C11REditor::custom_blocks;
+
+
+Ref<Block> _C11REditor::create_block_custom(const String &p_name) {
+    RefPtr script = singleton->custom_blocks[p_name];
+    // TODO how to convert from RefPtr to Ref<Script> ???
+    
+    // TODO check for which kind of block to instance
+    /*
+    if (script->get_language() == C11RScriptLanguage::singleton)
+    {
+        // add as a sub-graph block
+        block_name = script->get_path().get_file(); // auto generate to the filename?
+        // TODO implement a built-in script class name property to C11RScripts
+    }else {
+        if(!(script->get_instance_base_type() == "Block")) continue; // skip if not inheriting from block?
+        // TODO verify that this works ^^
+
+        block_name = script->get("block_namespace");
+        // add as a custom block
+
+    }
+    */
+
+	Ref<Block> node;
+	node.instance();
+	node->set_script(script);
+	return node;
+}
+
+void _C11REditor::register_block_pack(const Ref<BlockPack> &p_block_pack)
+{
+    Array scripts = p_block_pack->custom_block_scripts;
+    for(int i = 0; i < scripts.size(); i++)
+    {
+        Variant var = scripts[i];
+
+        if(var.get_type() == Variant::NIL || var.get_type() != Variant::OBJECT) continue;
+        Ref<Script> script = Object::cast_to<Script>(var);
+        String block_name = "unnamed block";
+        if (script->get_language() == C11RScriptLanguage::singleton)
+        {
+            // add as a sub-graph block
+            block_name = script->get_path().get_file(); // auto generate to the filename?
+            // TODO implement a built-in script class name property to C11RScripts
+        }else {
+            if(!(script->get_instance_base_type() == "Block")) continue; // skip if not inheriting from block?
+            // TODO verify that this works ^^
+
+            block_name = script->get("block_namespace");
+            // add as a custom block
+
+        }
+        // after finding the name, provide it to the registry
+        add_custom_block(block_name, p_block_pack->namespace_prefix, script);
+    }
+}
+void _C11REditor::unregister_block_pack(const Ref<BlockPack> &p_block_pack)
+{
+    Array scripts = p_block_pack->custom_block_scripts;
+    for(int i = 0; i < scripts.size(); i++)
+    {
+        Variant var = scripts[i];
+
+        if(var.get_type() == Variant::NIL || var.get_type() != Variant::OBJECT) continue;
+        Ref<Script> script = Object::cast_to<Script>(var);
+        String block_name = "unnamed block";
+        if (script->get_language() == C11RScriptLanguage::singleton)
+        {
+            // add as a sub-graph block
+            block_name = script->get_path().get_file(); // auto generate to the filename?
+            // TODO implement a built-in script class name property to C11RScripts
+        }else {
+            if(!(script->get_instance_base_type() == "Block")) continue; // skip if not inheriting from block?
+            // TODO verify that this works ^^
+
+            block_name = script->get("block_namespace");
+            // add as a custom block
+
+        }
+        // after finding the name, provide it to the registry
+        remove_custom_block(block_name, p_block_pack->namespace_prefix, script);
+    }
+}
+
+void _C11REditor::add_custom_block(const String &p_name, const String &p_namespace, const Ref<Script> &p_script) {
+	String node_name = p_namespace + "." + p_name;
+	custom_blocks.insert(node_name, p_script.get_ref_ptr());
+	C11RScriptLanguage::singleton->add_register_func(node_name, &_C11REditor::create_block_custom);
+	emit_signal("custom_nodes_updated");
+}
+
+void _C11REditor::remove_custom_block(const String &p_name, const String &p_namespace) {
+	String node_name = p_namespace + "." + p_name;
+	custom_blocks.erase(node_name);
+	C11RScriptLanguage::singleton->remove_register_func(node_name);
+	emit_signal("custom_blocks_updated");
+}
 _C11REditor::_C11REditor()
 {
     singleton = this;
@@ -350,5 +453,13 @@ _C11REditor::~_C11REditor()
 
 void _C11REditor::_bind_methods()
 {
+    ClassDB::bind_method(D_METHOD("register_block_pack", "block_pack"), &_C11REditor::register_block_pack);
+	ClassDB::bind_method(D_METHOD("unregister_block_pack", "block_pack"), &_C11REditor::unregister_block_pack);
+	
+    ClassDB::bind_method(D_METHOD("add_custom_block", "name", "category", "script"), &_C11REditor::add_custom_block);
+	ClassDB::bind_method(D_METHOD("remove_custom_block", "name", "category"), &_C11REditor::remove_custom_block);
+	ADD_SIGNAL(MethodInfo("custom_blocks_updated"));
 }
+
+
 #endif
