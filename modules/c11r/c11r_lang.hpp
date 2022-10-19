@@ -4,7 +4,6 @@
 
 #include "core/os/thread.h"
 #include "core/script_language.h"
-
 class C11RScriptInstance;
 class C11RScript;
 class BlockInstance;
@@ -19,6 +18,7 @@ typedef Ref<Block> (*BlockRegisterFunc)(const String &p_type);
 #include "lang/c11r_script_instance.hpp"
 #include "lang/c11r_script_function_state.hpp"
 #include "lang/c11r_script_language.hpp"
+#include "lang/blocks/builtin_blocks.hpp"
 
 //aid for registering
 template <class T>

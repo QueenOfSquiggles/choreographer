@@ -102,6 +102,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	bool is_sub_graph = false;
+
 	bool inherits_script(const Ref<Script> &p_script) const;
 
 	// TODO: Remove it in future when breaking changes are acceptable

@@ -31,6 +31,8 @@ void register_c11r_types()
 
 	C11REditor::register_editor();
 	#endif
+
+	register_builtin_blocks();
 }
 
 void unregister_c11r_types()

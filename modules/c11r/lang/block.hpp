@@ -67,7 +67,7 @@ public:
 		}
 	};
 
-	virtual TypeGuess guess_output_type(TypeGuess *p_inputs, int p_output) const;
+	virtual Block::TypeGuess guess_output_type(TypeGuess *p_inputs, int p_output) const;
 
 	Block();
 };

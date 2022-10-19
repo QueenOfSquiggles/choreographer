@@ -349,30 +349,43 @@ Map<String, RefPtr> _C11REditor::custom_blocks;
 
 
 Ref<Block> _C11REditor::create_block_custom(const String &p_name) {
-    RefPtr script = singleton->custom_blocks[p_name];
-    // TODO how to convert from RefPtr to Ref<Script> ???
-    
-    // TODO check for which kind of block to instance
-    /*
+    RefPtr ref_ptr_script = singleton->custom_blocks[p_name];
+    Ref<Script> script(ref_ptr_script);
     if (script->get_language() == C11RScriptLanguage::singleton)
     {
-        // add as a sub-graph block
-        block_name = script->get_path().get_file(); // auto generate to the filename?
-        // TODO implement a built-in script class name property to C11RScripts
-    }else {
-        if(!(script->get_instance_base_type() == "Block")) continue; // skip if not inheriting from block?
-        // TODO verify that this works ^^
-
-        block_name = script->get("block_namespace");
-        // add as a custom block
-
+        Ref<C11RScript> c11r_script = Object::cast_to<C11RScript>(script.ptr());
+        if(c11r_script.is_null()){
+            ERR_PRINT(vformat("ERROR in creating custom block \"%s\". Failed to cast script to a C11RScript reference. Potential module error.", p_name));
+        } else if(c11r_script->is_sub_graph) {
+            // load as a sub-graph
+            Ref<BlockSubGraph> block;
+            block.instance();
+            block->set_script(ref_ptr_script);
+            return block;
+        } else {
+            // load as a composite graph
+            Ref<BlockComposite> block;
+            block.instance();
+            block->set_script(ref_ptr_script);
+            return block;
+        }
+    } else if(script->get_instance_base_type() == "Block"){
+        // custom block (usually GDScript)
+        Ref<BlockCustom> block;
+        block.instance();
+        block->set_script(ref_ptr_script);
+        return block;
+    } else {
+        // Unrecognized format. Not subgraph/composite and not custom block definition     
+        // TODO create implementation for specific classes targeted at these types of blocks   
+        WARN_PRINT(vformat("Unrecognized script format for \"%s\". Should either be a Choreographer script, or a traditional script that extends `Block`.", p_name));
     }
-    */
+    return nullptr;
 
-	Ref<Block> node;
-	node.instance();
-	node->set_script(script);
-	return node;
+	// Ref<Block> node;
+	// node.instance();
+	// node->set_script(ref_ptr_script);
+	// return node;
 }
 
 void _C11REditor::register_block_pack(const Ref<BlockPack> &p_block_pack)
@@ -426,7 +439,7 @@ void _C11REditor::unregister_block_pack(const Ref<BlockPack> &p_block_pack)
 
         }
         // after finding the name, provide it to the registry
-        remove_custom_block(block_name, p_block_pack->namespace_prefix, script);
+        remove_custom_block(block_name, p_block_pack->namespace_prefix);
     }
 }
 
