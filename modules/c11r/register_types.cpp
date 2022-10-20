@@ -1,10 +1,8 @@
 #include "core/engine.h"
 #include "register_types.h"
 
-#include "lang/c11r_script_language.hpp"
-#include "lang/c11r_script.hpp"
-#include "lang/block.hpp"
-#include "lang/blocks/builtin_blocks.hpp"
+#include "c11r_lang.hpp"
+#include "blocks/builtin_blocks.hpp"
 #include "editor/c11r_editor.hpp"
 #include "packs/block_pack.hpp"
 

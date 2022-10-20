@@ -4,6 +4,7 @@
 #include "block_composite.hpp"
 #include "block_custom.hpp"
 #include "block_sub_graph.hpp"
+#include "block_entry.hpp"
 
 _FORCE_INLINE_ static void register_builtin_blocks()
 {
@@ -18,9 +19,9 @@ _FORCE_INLINE_ static void register_builtin_blocks()
 
     // script composition nodes
     // FIXME do these need to not be registered??
-    //ClassDB::register_class<BlockComposite>();
-    //ClassDB::register_class<BlockCustom>();
-    //ClassDB::register_class<BlockSubGraph>();   
+    ClassDB::register_class<BlockComposite>();
+    ClassDB::register_class<BlockCustom>();
+    ClassDB::register_class<BlockSubGraph>();
 }
 
 #endif // BUILTIN_BLOCK_H

@@ -1,7 +1,7 @@
 #ifndef BLOCK_COMPOSITE_H
 #define BLOCK_COMPOSITE_H
 
-#include "../block.hpp"
+#include "../c11r_lang.hpp"
 
 class BlockComposite : public Block
 {

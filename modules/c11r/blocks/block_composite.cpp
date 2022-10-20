@@ -67,7 +67,7 @@ BlockInstance *BlockComposite::instance(C11RScriptInstance *p_instance)
     return nullptr;
 }
 
-TypeGuess BlockComposite::guess_output_type(TypeGuess *p_inputs, int p_output) const 
+Block::TypeGuess BlockComposite::guess_output_type(TypeGuess *p_inputs, int p_output) const 
 {
 // FIXME fill out stub
     return TypeGuess();

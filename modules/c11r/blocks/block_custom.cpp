@@ -67,7 +67,7 @@ BlockInstance *BlockCustom::instance(C11RScriptInstance *p_instance)
     return nullptr;
 }
 
-TypeGuess BlockCustom::guess_output_type(TypeGuess *p_inputs, int p_output) const 
+Block::TypeGuess BlockCustom::guess_output_type(TypeGuess *p_inputs, int p_output) const 
 {
 // FIXME fill out stub
     return TypeGuess();

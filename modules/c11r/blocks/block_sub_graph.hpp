@@ -1,7 +1,7 @@
 #ifndef BLOCK_SUB_GRAPH_H
 #define BLOCK_SUB_GRAPH_H
 
-#include "../block.hpp"
+#include "../c11r_lang.hpp"
 
 class BlockSubGraph : public Block
 {

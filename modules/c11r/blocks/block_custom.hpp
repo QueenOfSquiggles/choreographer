@@ -1,7 +1,7 @@
 #ifndef BLOCK_CUSTOM_H
 #define BLOCK_CUSTOM_H
 
-#include "../block.hpp"
+#include "../c11r_lang.hpp"
 
 class BlockCustom : public Block
 {

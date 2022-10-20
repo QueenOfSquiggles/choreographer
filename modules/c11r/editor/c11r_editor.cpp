@@ -138,6 +138,7 @@ C11REditor::C11REditor()
     block_graph->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     block_graph->set_v_size_flags(Control::SIZE_EXPAND_FILL);
     block_graph->set_anchors_and_margins_preset(Control::PRESET_WIDE);
+    block_graph->connect("gui_input", this, "_graph_gui_input");
 
     inspection_panel = memnew(PanelContainer);
     inspection_panel->set_h_size_flags(Control::SIZE_SHRINK_END); // shrink to minimum size for max graph visibility
@@ -181,12 +182,36 @@ C11REditor::C11REditor()
     tab_options->add_child(hsep);
  
     // TODO add more tab options
+
+
+    //TODO create popups
+
+    popup_add_block = memnew(PopupMenu);
+    panel->add_child(popup_add_block);
+    popup_add_block->add_item("Item 1", 0);
+    popup_add_block->add_item("Item 2", 1);
+    popup_add_block->add_item("Item 3", 2);
+    popup_add_block->add_item("Item 4", 3);
+    popup_add_block->add_item("Item 5", 4);
+    popup_add_block->connect("id_pressed", this, "_add_block_by_id");
+
+
 }
 
 C11REditor::~C11REditor()
 {
     undo_redo->clear_history();
 }
+
+void C11REditor::_add_block_by_id(int id)
+{
+    print_line(vformat("Adding block id: %d", id));
+
+    Ref<BlockEntry> entry;
+    entry.instance();
+    //script->add_node("Test Block", script->get_available_id(), entry);
+}
+
 
 void C11REditor::_change_tab(Control *new_tab)
 {
@@ -201,6 +226,28 @@ void C11REditor::_change_tab(Control *new_tab)
     inspection_panel->add_child(new_tab);
 }
 
+void C11REditor::_input(const Ref<InputEvent> &p_event) {
+    // TODO is this function needed for anything?
+}
+
+void C11REditor::_graph_gui_input(const Ref<InputEvent> &p_event) {
+    bool do_add_block = false; 
+	{ // right click -> add block
+        Ref<InputEventMouseButton> key = p_event;
+        do_add_block = (key.is_valid() && key->is_pressed() && key->get_button_index() == BUTTON_MASK_RIGHT);
+    }
+    { // shift+A -> add block
+        Ref<InputEventKey> key = p_event;
+        do_add_block = do_add_block || (key.is_valid() && key->get_shift() && key->get_scancode() == KEY_A);
+    }
+
+    if(do_add_block)
+    { // flag met, perform process
+        Rect2 bounds = popup_add_block->get_rect();
+        bounds.position = get_global_mouse_position();
+        popup_add_block->popup(bounds);
+    }
+}
 
 void C11REditor::_toggle_inspector_visibility()
 {
@@ -222,6 +269,9 @@ C11REditor::Clipboard *C11REditor::clipboard = nullptr;
 void C11REditor::_bind_methods(){
 
     ClassDB::bind_method(D_METHOD("_toggle_inspector_visibility"), &C11REditor::_toggle_inspector_visibility);
+    ClassDB::bind_method(D_METHOD("_input"), &C11REditor::_input);
+    ClassDB::bind_method(D_METHOD("_add_block_by_id"), &C11REditor::_add_block_by_id);
+    ClassDB::bind_method(D_METHOD("_graph_gui_input"), &C11REditor::_graph_gui_input);
 }
 
 void C11REditor::add_syntax_highlighter(SyntaxHighlighter *p_highlighter){}

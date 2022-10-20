@@ -7,7 +7,8 @@
 #include "scene/gui/graph_edit.h"
 
 #include "../c11r_lang.hpp"
-#include "c11r/packs/block_pack.hpp"
+#include "../blocks/builtin_blocks.hpp"
+#include "../packs/block_pack.hpp"
 
 // FIXME remove before release builds
 #define TOOLS_ENABLED
@@ -35,8 +36,13 @@ class C11REditor: public ScriptEditorBase
 	GraphEdit *block_graph;
 	VBoxContainer *tab_options;
 
+	PopupMenu *popup_add_block;
+
 protected:
 	void _change_tab(Control *new_tab);
+	void _add_block_by_id(int id);
+	void _graph_gui_input(const Ref<InputEvent> &p_event);
+
     static void _bind_methods();
 
 public:
@@ -76,6 +82,8 @@ public:
 	virtual void clear_edit_menu();
 	virtual bool can_lose_focus_on_node_selection() { return false; }
 	virtual void validate();
+
+	void _input(const Ref<InputEvent> &p_event);
 
 	static void register_editor();
 

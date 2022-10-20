@@ -67,7 +67,7 @@ BlockInstance *BlockSubGraph::instance(C11RScriptInstance *p_instance)
     return nullptr;
 }
 
-TypeGuess BlockSubGraph::guess_output_type(TypeGuess *p_inputs, int p_output) const 
+Block::TypeGuess BlockSubGraph::guess_output_type(TypeGuess *p_inputs, int p_output) const 
 {
 // FIXME fill out stub
     return TypeGuess();
