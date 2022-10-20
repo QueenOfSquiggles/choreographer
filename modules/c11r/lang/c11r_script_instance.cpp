@@ -1,9 +1,11 @@
-#include "../c11r_lang.hpp"
+#include "c11r_script_instance.hpp"
 
 #include "core/core_string_names.h"
 #include "core/os/os.h"
 #include "core/project_settings.h"
 #include "scene/main/node.h"
+
+// FIXME replace with block implementation
 #include "modules/visual_script/visual_script_func_nodes.h"
 #include "modules/visual_script/visual_script_nodes.h"
 

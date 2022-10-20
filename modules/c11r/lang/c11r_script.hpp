@@ -2,6 +2,9 @@
 #define C11R_SCRIPT_H
 
 #include "../c11r_lang.hpp"
+#include "block.hpp"
+#include "c11r_script_instance.hpp"
+#include "c11r_script_language.hpp"
 
 class C11RScript : public Script {
 	GDCLASS(C11RScript, Script);

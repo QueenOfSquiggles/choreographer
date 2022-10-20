@@ -1,9 +1,13 @@
 #include "core/engine.h"
 #include "register_types.h"
 
-#include "c11r_lang.hpp"
+#include "lang/c11r_script_language.hpp"
+#include "lang/c11r_script.hpp"
+#include "lang/block.hpp"
+#include "lang/blocks/builtin_blocks.hpp"
 #include "editor/c11r_editor.hpp"
 #include "packs/block_pack.hpp"
+
 
 C11RScriptLanguage* c11r_script_language = nullptr;
 
@@ -16,10 +20,13 @@ void register_c11r_types()
     c11r_script_language = memnew(C11RScriptLanguage);
     ScriptServer::register_language(c11r_script_language);
 	
+	register_builtin_blocks();
+
 	ClassDB::register_class<C11RScript>();
 	ClassDB::register_virtual_class<Block>();
 	ClassDB::register_class<C11RScriptFunctionState>();
 	ClassDB::register_class<BlockPack>();
+
 
 	#ifdef TOOLS_ENABLED
     ClassDB::set_current_api(ClassDB::API_EDITOR);
@@ -32,7 +39,7 @@ void register_c11r_types()
 	C11REditor::register_editor();
 	#endif
 
-	register_builtin_blocks();
+	
 }
 
 void unregister_c11r_types()

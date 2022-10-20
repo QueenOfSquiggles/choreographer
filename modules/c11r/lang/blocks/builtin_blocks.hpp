@@ -17,9 +17,10 @@ _FORCE_INLINE_ static void register_builtin_blocks()
     // TODO implement some basic flow control (if, for, while)
 
     // script composition nodes
-    ClassDB::register_class<BlockComposite>();
-    ClassDB::register_class<BlockCustom>();
-    ClassDB::register_class<BlockSubGraph>();   
+    // FIXME do these need to not be registered??
+    //ClassDB::register_class<BlockComposite>();
+    //ClassDB::register_class<BlockCustom>();
+    //ClassDB::register_class<BlockSubGraph>();   
 }
 
 #endif // BUILTIN_BLOCK_H

@@ -1,13 +1,8 @@
-#pragma once
 #ifndef C11R_LANG_H
 #define C11R_LANG_H
 
 #include "core/os/thread.h"
 #include "core/script_language.h"
-class C11RScriptInstance;
-class C11RScript;
-class BlockInstance;
-class Block;
 
 typedef Ref<Block> (*BlockRegisterFunc)(const String &p_type);
 

@@ -1,4 +1,4 @@
-#include "../c11r_lang.hpp"
+#include "c11r_script.hpp"
 
 #include "core/core_string_names.h"
 #include "core/os/os.h"

@@ -27,6 +27,9 @@ public:
 
     TypeGuess guess_output_type(TypeGuess *p_inputs, int p_output) const override;
 
+	BlockComposite(){}
+	~BlockComposite(){}
+
 };
 
 #endif

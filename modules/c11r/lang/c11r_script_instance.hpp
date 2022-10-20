@@ -2,6 +2,9 @@
 #define C11R_SCRIPT_INSTANCE_H
 
 #include "../c11r_lang.hpp"
+#include "c11r_script.hpp"
+#include "block_instance.hpp"
+#include "c11r_script_function_state.hpp"
 
 class C11RScriptInstance : public ScriptInstance {
 	Object *owner;

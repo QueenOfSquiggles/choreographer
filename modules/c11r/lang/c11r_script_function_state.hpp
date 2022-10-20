@@ -2,6 +2,8 @@
 #define C11R_SCRIPT_FUNCTION_STATE_H
 
 #include "../c11r_lang.hpp"
+#include "block_instance.hpp"
+#include "c11r_script_instance.hpp"
 
 class C11RScriptFunctionState : public Reference {
 	GDCLASS(C11RScriptFunctionState, Reference);

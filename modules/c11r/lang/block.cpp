@@ -1,4 +1,4 @@
-#include "../c11r_lang.hpp"
+#include "block.hpp"
 
 #include "core/core_string_names.h"
 #include "core/os/os.h"
@@ -6,8 +6,6 @@
 #include "scene/main/node.h"
 #include "modules/visual_script/visual_script_func_nodes.h"
 #include "modules/visual_script/visual_script_nodes.h"
-
-
 
 //used by editor, this is not really saved
 void Block::set_breakpoint(bool p_breakpoint) {
@@ -109,7 +107,7 @@ String Block::_get_block_namespace()
 	return block_namespace;
 }
 
-Block::TypeGuess Block::guess_output_type(TypeGuess *p_inputs, int p_output) const {
+TypeGuess Block::guess_output_type(TypeGuess *p_inputs, int p_output) const {
 	PropertyInfo pinfo = get_output_value_port_info(p_output);
 
 	TypeGuess tg;
@@ -120,6 +118,11 @@ Block::TypeGuess Block::guess_output_type(TypeGuess *p_inputs, int p_output) con
 	}
 
 	return tg;
+}
+
+PropertyInfo Block::get_output_value_port_info(int p_idx) const
+{
+	return PropertyInfo();
 }
 
 Ref<C11RScript> Block::get_visual_script() const {

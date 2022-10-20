@@ -2,6 +2,7 @@
 #define BLOCK_INSTANCE_H
 
 #include "../c11r_lang.hpp"
+#include "block.hpp"
 
 class BlockInstance {
 	friend class C11RScriptInstance;

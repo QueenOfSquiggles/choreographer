@@ -7,7 +7,6 @@ class BlockSubGraph : public Block
 {
     GDCLASS(BlockSubGraph, Block);
 
-
 public:
     int get_output_sequence_port_count() const override;
 	bool has_input_sequence_port() const override;
@@ -27,6 +26,9 @@ public:
     BlockInstance *instance(C11RScriptInstance *p_instance) override;
 
     TypeGuess guess_output_type(TypeGuess *p_inputs, int p_output) const override;
+
+	BlockSubGraph() {}
+	~BlockSubGraph() {}
 
 };
 

@@ -3,6 +3,8 @@
 
 
 #include "../c11r_lang.hpp"
+#include "c11r_script.hpp"
+#include "block_instance.hpp"
 
 class C11RScriptLanguage : public ScriptLanguage {
 	Map<String, BlockRegisterFunc> register_funcs;
