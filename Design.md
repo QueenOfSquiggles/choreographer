@@ -77,3 +77,5 @@ groups = ["(E0, A)", "B, C"]
 
 
 I'm considering allowing a "dense" format that would reduce unecessary content while sacrificing readability. It's already rather difficult to see what is happening as is, but it fully describes a graph and execution options.
+
+I still like keeping the internal data for each block being JSON because then making custom blocks has easy serialization for data. 
