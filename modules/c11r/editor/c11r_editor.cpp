@@ -82,7 +82,6 @@ static void _load_colours()
     colours_light.insert(Variant::POOL_COLOR_ARRAY,Color(0.57, 0.73, 0.0));
 }
 
-
 static Color _color_from_type(Variant::Type p_type, bool dark_theme = true) {
 	// Streamlined version using variant-type:colour mapping. 
     // TODO add an overrides check?
@@ -194,7 +193,7 @@ C11REditor::C11REditor()
     popup_add_block->add_item("Item 4", 3);
     popup_add_block->add_item("Item 5", 4);
     popup_add_block->connect("id_pressed", this, "_add_block_by_id");
-
+    popup_add_block->add_color_override("font_color", _color_from_type(Variant::OBJECT, true)); // force using the _color_from_type method because we don't use it yet...
 
 }
 

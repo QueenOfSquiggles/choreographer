@@ -3,6 +3,9 @@
 
 #include "core/os/thread.h"
 #include "core/script_language.h"
+#include "core/io/config_file.h"
+
+#define C11R_LANG_FILE_EXT "c11r"
 
 class C11RScriptInstance;
 class C11RScript;
@@ -139,7 +142,7 @@ public:
 class C11RScript : public Script {
 	GDCLASS(C11RScript, Script);
 
-	RES_BASE_EXTENSION("c11r");
+	RES_BASE_EXTENSION(C11R_LANG_FILE_EXT);
 
 public:
 	struct SequenceConnection {
@@ -332,6 +335,9 @@ public:
 	virtual void get_script_property_list(List<PropertyInfo> *p_list) const;
 
 	virtual int get_member_line(const StringName &p_member) const;
+
+	void load(Ref<ConfigFile> p_configuration);
+	Ref<ConfigFile> save() const;
 
 #ifdef TOOLS_ENABLED
 	virtual bool are_subnodes_edited() const;

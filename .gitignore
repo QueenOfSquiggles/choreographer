@@ -1,26 +1,29 @@
 #
 #   Module
 #
-modules/c11r/__pycache__
-modules/c11r/*.o
-modules/c11r/*.os
-modules/c11r/editor/*.os
-**.os
-**.o
+**/*.o
+**/*.os
 
 #
 #   IDE-Specific
 #
 
-# vscode settings
+# vscode
 .vscode
-choreographer.code-workspace
+*.code-workspace
+
+# (if you use a different IDE, add what you need)
 
 #
 #   Demo Project
 #
 demo/**.import
 demo/.import/
+
+#
+#   Scons
+#
+**/__pycache__
 
 #
 #   Other

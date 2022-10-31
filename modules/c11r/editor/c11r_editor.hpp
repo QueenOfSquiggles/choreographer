@@ -11,7 +11,7 @@
 #include "../packs/block_pack.hpp"
 
 // FIXME remove before release builds
-#define TOOLS_ENABLED
+//#define TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
 

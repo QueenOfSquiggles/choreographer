@@ -914,11 +914,11 @@ bool C11RScript::instance_has(const Object *p_this) const {
 }
 
 bool C11RScript::has_source_code() const {
-	return false;
+	return true;
 }
 
 String C11RScript::get_source_code() const {
-	return String();
+	return "";
 }
 
 void C11RScript::set_source_code(const String &p_code) {
@@ -1331,6 +1331,24 @@ C11RScript::~C11RScript() {
 	while (!functions.empty()) {
 		remove_function(functions.front()->key());
 	}
+}
+
+void C11RScript::load(Ref<ConfigFile> p_configuration)
+{
+	// TODO load information
+	print_line("Loading C11RScript from custom loader (ConfigFile)");
+}
+
+Ref<ConfigFile> C11RScript::save() const
+{
+	Ref<ConfigFile> cfg;
+	cfg.instance();
+	cfg->set_value("header", "number", 0.5);
+	cfg->set_value("header", "name", "QueenOfSquiggles");
+	cfg->set_value("metadata", "garbage", rand());
+	cfg->set_value("metadata", "trash", rand());
+	cfg->set_value("metadata", "rubbish", rand());
+	return cfg;
 }
 
 ////////////////////////////////////////////
@@ -2338,7 +2356,7 @@ String C11RScriptLanguage::get_type() const {
 	return "Choregrapher";
 }
 String C11RScriptLanguage::get_extension() const {
-	return "c11r";
+	return C11R_LANG_FILE_EXT;
 }
 Error C11RScriptLanguage::execute_file(const String &p_path) {
 	return OK;
@@ -2560,7 +2578,7 @@ void C11RScriptLanguage::reload_tool_script(const Ref<Script> &p_script, bool p_
 /* LOADER FUNCTIONS */
 
 void C11RScriptLanguage::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("c11r");
+	p_extensions->push_back(C11R_LANG_FILE_EXT);
 }
 void C11RScriptLanguage::get_public_functions(List<MethodInfo> *p_functions) const {
 }

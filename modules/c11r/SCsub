@@ -7,6 +7,8 @@ Import("env_modules")
 
 module_env = env_modules.Clone()
 module_env.Append(CCFLAGS=['-O2'])
+module_env.Append(CXXFLAGS=['-Wall','-Werror'])
+#module_env.Append(CPPPATH=['.'])
 
 sources = glob.glob("**/*.cpp", recursive=True)
 print("c11r sources: ", sources)

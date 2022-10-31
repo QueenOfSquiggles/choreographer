@@ -1,10 +1,11 @@
-#include "core/engine.h"
 #include "register_types.h"
+#include "core/engine.h"
 
 #include "c11r_lang.hpp"
 #include "blocks/builtin_blocks.hpp"
 #include "editor/c11r_editor.hpp"
 #include "packs/block_pack.hpp"
+#include "parser/c11r_parser.hpp"
 
 
 C11RScriptLanguage* c11r_script_language = nullptr;
@@ -12,6 +13,9 @@ C11RScriptLanguage* c11r_script_language = nullptr;
 #ifdef TOOLS_ENABLED
 static _C11REditor *c11r_editor_singleton = nullptr;
 #endif
+
+static Ref<ResourceFormatLoaderC11R> loader_c11r;
+static Ref<ResourceFormatSaverC11R> saver_c11r;
 
 void register_c11r_types()
 {
@@ -37,6 +41,13 @@ void register_c11r_types()
 	C11REditor::register_editor();
 	#endif
 
+	{ // resource loading
+		loader_c11r.instance();
+		ResourceLoader::add_resource_format_loader(loader_c11r);
+
+		saver_c11r.instance();
+		ResourceSaver::add_resource_format_saver(saver_c11r);
+	}
 	
 }
 
@@ -56,6 +67,14 @@ void unregister_c11r_types()
     {
         memdelete(c11r_script_language);
     }
+
+	{ // resource loading
+		ResourceLoader::remove_resource_format_loader(loader_c11r);
+		loader_c11r.unref();
+
+		ResourceSaver::remove_resource_format_saver(saver_c11r);
+		saver_c11r.unref();
+	}
 }
 
 
