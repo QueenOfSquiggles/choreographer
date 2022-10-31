@@ -10,7 +10,6 @@
 #include "editor/editor_scale.h"
 #include "scene/main/viewport.h"
 
-
 #ifdef TOOLS_ENABLED
 
 
@@ -117,8 +116,6 @@ C11REditor::C11REditor()
     undo_redo = EditorNode::get_singleton()->get_undo_redo();
     set_process_input(true);
     set_process_unhandled_input(true);
-
-    // TODO create editor graphics
     
     Panel *panel = memnew(Panel); // Panel seems redundant, but it lets us have child nodes that exist outside of bounds as needed.
     add_child(panel);
@@ -164,7 +161,6 @@ C11REditor::C11REditor()
     hbox->add_child(tab_options);
 
 
-    // TODO hook up all the signals needed
     // block_graph signals
 
     // tab_options signals
@@ -172,7 +168,6 @@ C11REditor::C11REditor()
     button_toggle_visibility->set_custom_minimum_size((Size2){16.0f, 16.0f});
     button_toggle_visibility->set_icon_align(Button::TextAlign::ALIGN_CENTER);
     button_toggle_visibility->set_icon(Control::get_icon("icon_GUI_visibility_visible", "EditorIcons"));
-    // TODO figure out why the icon isn't loading?? Or at least not visible?
     button_toggle_visibility->set_text("+");
     button_toggle_visibility->connect("pressed", this, "_toggle_inspector_visibility");
     tab_options->add_child(button_toggle_visibility);
@@ -180,10 +175,10 @@ C11REditor::C11REditor()
     HSeparator *hsep = memnew(HSeparator);
     tab_options->add_child(hsep);
  
-    // TODO add more tab options
+    // add more tab options
 
 
-    //TODO create popups
+    // create popups
 
     popup_add_block = memnew(PopupMenu);
     panel->add_child(popup_add_block);
@@ -205,10 +200,6 @@ C11REditor::~C11REditor()
 void C11REditor::_add_block_by_id(int id)
 {
     print_line(vformat("Adding block id: %d", id));
-
-    Ref<BlockEntry> entry;
-    entry.instance();
-    //script->add_node("Test Block", script->get_available_id(), entry);
 }
 
 
@@ -281,7 +272,7 @@ void C11REditor::apply_code(){}
 
 RES C11REditor::get_edited_resource() const
 {
-    return current_script; // FIXME
+    return current_script;
 }
 
 void C11REditor::set_edited_resource(const RES &p_res){
@@ -407,20 +398,20 @@ Ref<Block> _C11REditor::create_block_custom(const String &p_name) {
             ERR_PRINT(vformat("ERROR in creating custom block \"%s\". Failed to cast script to a C11RScript reference. Potential module error.", p_name));
         } else if(c11r_script->is_sub_graph) {
             // load as a sub-graph
-            Ref<BlockSubGraph> block;
+            Ref<Block> block;
             block.instance();
             block->set_script(ref_ptr_script);
             return block;
         } else {
             // load as a composite graph
-            Ref<BlockComposite> block;
+            Ref<Block> block;
             block.instance();
             block->set_script(ref_ptr_script);
             return block;
         }
     } else if(script->get_instance_base_type() == "Block"){
         // custom block (usually GDScript)
-        Ref<BlockCustom> block;
+        Ref<Block> block;
         block.instance();
         block->set_script(ref_ptr_script);
         return block;

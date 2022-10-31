@@ -7,7 +7,6 @@
 #include "scene/gui/graph_edit.h"
 
 #include "../c11r_lang.hpp"
-#include "../blocks/builtin_blocks.hpp"
 #include "../packs/block_pack.hpp"
 
 // FIXME remove before release builds

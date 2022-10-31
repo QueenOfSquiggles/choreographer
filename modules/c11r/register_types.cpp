@@ -2,7 +2,6 @@
 #include "core/engine.h"
 
 #include "c11r_lang.hpp"
-#include "blocks/builtin_blocks.hpp"
 #include "editor/c11r_editor.hpp"
 #include "packs/block_pack.hpp"
 #include "parser/c11r_parser.hpp"
@@ -22,11 +21,8 @@ void register_c11r_types()
     c11r_script_language = memnew(C11RScriptLanguage);
     ScriptServer::register_language(c11r_script_language);
 	
-	register_builtin_blocks();
-
 	ClassDB::register_class<C11RScript>();
 	ClassDB::register_virtual_class<Block>();
-	ClassDB::register_class<C11RScriptFunctionState>();
 	ClassDB::register_class<BlockPack>();
 
 
@@ -41,13 +37,12 @@ void register_c11r_types()
 	C11REditor::register_editor();
 	#endif
 
-	{ // resource loading
-		loader_c11r.instance();
-		ResourceLoader::add_resource_format_loader(loader_c11r);
+	loader_c11r.instance();
+	ResourceLoader::add_resource_format_loader(loader_c11r);
 
-		saver_c11r.instance();
-		ResourceSaver::add_resource_format_saver(saver_c11r);
-	}
+	saver_c11r.instance();
+	ResourceSaver::add_resource_format_saver(saver_c11r);
+	
 	
 }
 
@@ -68,13 +63,12 @@ void unregister_c11r_types()
         memdelete(c11r_script_language);
     }
 
-	{ // resource loading
-		ResourceLoader::remove_resource_format_loader(loader_c11r);
-		loader_c11r.unref();
+	ResourceLoader::remove_resource_format_loader(loader_c11r);
+	loader_c11r.unref();
 
-		ResourceSaver::remove_resource_format_saver(saver_c11r);
-		saver_c11r.unref();
-	}
+	ResourceSaver::remove_resource_format_saver(saver_c11r);
+	saver_c11r.unref();
+
 }
 
 

@@ -1,8 +1,6 @@
 #ifndef C11R_PARSER_H
 #define C11R_PARSER_H
 
-// TODO implement .c11r parsing
-
 // refer to: https://docs.godotengine.org/en/stable/development/cpp/custom_resource_format_loaders.html
 
 #include "core/io/resource_loader.h"

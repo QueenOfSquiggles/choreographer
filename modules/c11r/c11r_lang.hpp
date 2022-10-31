@@ -47,16 +47,55 @@ private:
 	friend class C11RScriptInstance;
 
 public:
+	bool is_sub_graph = false;
+
 	// resource format loading
 	void load(Ref<ConfigFile> p_configuration);
 	Ref<ConfigFile> save() const;
+
+	// overrides
+	virtual bool can_instance() const;
+
+	virtual Ref<Script> get_base_script() const; //for script inheritance
+
+	virtual bool inherits_script(const Ref<Script> &p_script) const;
+
+	virtual StringName get_instance_base_type() const; // this may not work in all scripts, will return empty if so
+	virtual ScriptInstance *instance_create(Object *p_this);
+	virtual bool instance_has(const Object *p_this) const;
+
+	virtual bool has_source_code() const;
+	virtual String get_source_code() const;
+	virtual void set_source_code(const String &p_code);
+	virtual Error reload(bool p_keep_state = false);
+
+	virtual bool has_method(const StringName &p_method) const;
+	virtual MethodInfo get_method_info(const StringName &p_method) const;
+
+	virtual bool is_tool() const;
+	virtual bool is_valid() const;
+
+	virtual ScriptLanguage *get_language() const;
+
+	virtual bool has_script_signal(const StringName &p_signal) const;
+	virtual void get_script_signal_list(List<MethodInfo> *r_signals) const;
+
+	virtual bool get_property_default_value(const StringName &p_property, Variant &r_value) const;
+
+	virtual void update_exports() {} //editor tool
+	virtual void get_script_method_list(List<MethodInfo> *p_list) const;
+	virtual void get_script_property_list(List<PropertyInfo> *p_list) const;
+
+	virtual int get_member_line(const StringName &p_member) const;
+
+	virtual void get_constants(Map<StringName, Variant> *p_constants);
+	virtual void get_members(Set<StringName> *p_constants);
 
 	C11RScript();
 	~C11RScript();
 };
 
 class C11RScriptInstance : public ScriptInstance {
-	friend class C11RScriptFunctionState; //for yield
 	friend class C11RScriptLanguage; //for debugger
 public:
 	virtual bool set(const StringName &p_name, const Variant &p_value);
@@ -81,40 +120,13 @@ public:
 	~C11RScriptInstance();
 };
 
-class C11RScriptFunctionState : public Reference {
-	GDCLASS(C11RScriptFunctionState, Reference);
-	friend class C11RScriptInstance;
-
-	ObjectID instance_id;
-	ObjectID script_id;
-	C11RScriptInstance *instance;
-	StringName function;
-	Vector<uint8_t> stack;
-	int working_mem_index;
-	int variant_stack_size;
-	BlockInstance *node;
-	int flow_stack_pos;
-	int pass;
-
-	Variant _signal_callback(const Variant **p_args, int p_argcount, Variant::CallError &r_error);
-
-protected:
-	static void _bind_methods();
-
-public:
-	void connect_to_signal(Object *p_obj, const String &p_signal, Array p_binds);
-	bool is_valid() const;
-	Variant resume(Array p_args);
-	C11RScriptFunctionState();
-	~C11RScriptFunctionState();
-};
-
 typedef Ref<Block> (*BlockRegisterFunc)(const String &p_type);
 
 class C11RScriptLanguage : public ScriptLanguage {
+	Map<String, BlockRegisterFunc> register_funcs;
+
 public:
 	static C11RScriptLanguage *singleton;
-
 	Mutex lock;
 
 	bool debug_break(const String &p_error, bool p_allow_continue = true);
