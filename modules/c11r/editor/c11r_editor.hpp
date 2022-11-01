@@ -34,6 +34,7 @@ class C11REditor: public ScriptEditorBase
 	PanelContainer *inspection_panel;
 	GraphEdit *block_graph;
 	VBoxContainer *tab_options;
+	HBoxContainer *edit_menu;
 
 	PopupMenu *popup_add_block;
 

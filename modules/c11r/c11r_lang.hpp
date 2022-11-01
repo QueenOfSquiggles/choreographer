@@ -21,18 +21,18 @@ class Block : public Resource {
 
 protected:
 	static void _bind_methods();
-
 public:
 	String block_namespace = "core";
 
 	Block();
+	~Block(){}
 };
 
 class BlockInstance {
 	friend class C11RScriptInstance;
 	friend class C11RScriptLanguage; //for debugger
 
-
+	
 public:
 	BlockInstance();
 	~BlockInstance();
@@ -45,6 +45,34 @@ class C11RScript : public Script {
 
 private:
 	friend class C11RScriptInstance;
+
+	struct BlockFunction
+	{
+		MethodInfo method_info;
+		Set<Ref<Block>> execution_order;
+	};
+	struct C11RProperty
+	{
+		int internal_id;
+		bool exported;
+		PropertyInfo property;
+	};
+	struct Composition
+	{
+		StringName name;
+		bool is_virtual;
+		Ref<Script> script;
+		BlockFunction function;
+	};
+
+	Ref<Script> base; // extend: single
+	List<Ref<Block>> blocks; // all blocks
+	List<Composition> composited_blocks; // extend: many
+
+	List<C11RProperty> properties; // internal
+	List<BlockFunction> functions;
+	List<StringName> signals;
+
 
 public:
 	bool is_sub_graph = false;
@@ -98,6 +126,8 @@ public:
 class C11RScriptInstance : public ScriptInstance {
 	friend class C11RScriptLanguage; //for debugger
 public:
+	Ref<C11RScript> script;
+
 	virtual bool set(const StringName &p_name, const Variant &p_value);
 	virtual bool get(const StringName &p_name, Variant &r_ret) const;
 	virtual void get_property_list(List<PropertyInfo> *p_properties) const;

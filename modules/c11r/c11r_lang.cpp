@@ -18,7 +18,6 @@ void Block::_bind_methods() {
 	block_call_func.return_val = PropertyInfo(Variant::ARRAY, "return_arg_stack");
 	ClassDB::add_virtual_method("Block", block_call_func);
 
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "_default_input_values", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "_set_default_input_values", "_get_default_input_values");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "block_namespace", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR),"_set_block_namespace", "_get_block_namespace");
 	ADD_SIGNAL(MethodInfo("ports_changed"));
 }
@@ -77,7 +76,7 @@ bool C11RScript::can_instance() const {
 }
 
 Ref<Script> C11RScript::get_base_script() const {
-	return Ref<Script>();
+	return base;
 }
 
 bool C11RScript::inherits_script(const Ref<Script> &p_script) const {
@@ -86,12 +85,24 @@ bool C11RScript::inherits_script(const Ref<Script> &p_script) const {
 
 StringName C11RScript::get_instance_base_type() const 
 {
-	return "";
+	if(base.is_valid())
+	{
+		return base->get_instance_base_type();
+	}
+	return StringName();
 }
 
 ScriptInstance *C11RScript::instance_create(Object *p_this) 
 {
-	return nullptr; 
+	if(!Object::cast_to<C11RScript>(p_this))
+	{
+		return nullptr;
+	}
+
+	C11RScriptInstance *instance = memnew(C11RScriptInstance);
+	instance->script = *(Object::cast_to<Ref<C11RScript>>(p_this));
+	// TODO add in any instance dependencies
+	return instance;
 }
 
 bool C11RScript::instance_has(const Object *p_this) const 
@@ -118,17 +129,51 @@ Error C11RScript::reload(bool p_keep_state)
 
 bool C11RScript::has_method(const StringName &p_method) const 
 {
+	for(int i = 0; i < functions.size(); i++)
+	{
+		BlockFunction func = functions[i];
+		if (func.method_info.name == p_method) return true;
+	}
+	for(int i = 0; i < composited_blocks.size(); i++)
+	{
+		Composition comp = composited_blocks[i];
+		// we want to ignore virtual compositions because they are not considered implementation without explicit specification of function calls
+		// >> virtual compositions can provide optional function calls, but do not provide any default functions. Must be explicitly called by the compositing script.
+		if(!comp.is_virtual && comp.script->has_method(p_method)) return true;
+	}
 	return false;
 }
 
 MethodInfo C11RScript::get_method_info(const StringName &p_method) const 
 {
+	for(int i = 0; i < functions.size(); i++)
+	{
+		BlockFunction func = functions[i];
+		if (func.method_info.name == p_method) return func.method_info;
+	}
+	for(int i = 0; i < composited_blocks.size(); i++)
+	{
+		Composition comp = composited_blocks[i];
+		// we want to ignore virtual compositions because they are not considered implementation without explicit specification of function calls
+		// >> virtual compositions can provide optional function calls, but do not provide any default functions. Must be explicitly called by the compositing script.
+		if(!comp.is_virtual && comp.script->has_method(p_method))
+		{
+			List<MethodInfo> block_funcs;
+			comp.script->get_method_list(&block_funcs);
+			for(int j = 0; j < block_funcs.size(); j++)
+			{
+				// BUG this will generally produce unpredictable behaviour. I'm not sure if this function is being called internally very often, or expects consistent results.
+				MethodInfo info = block_funcs[i];
+				if(info.name == p_method) return info;				
+			}
+		}
+	}
 	return MethodInfo();
 }
 
 bool C11RScript::is_tool() const 
 {
-	return false;
+	return false; // TODO do we want to allow tool scripts for this language? It would require some extra effort to maintain stability
 }
 
 bool C11RScript::is_valid() const 
@@ -157,11 +202,41 @@ bool C11RScript::get_property_default_value(const StringName &p_property, Varian
 void C11RScript::get_script_method_list(List<MethodInfo> *p_list) const 
 {
 
+	for(int i = 0; i < functions.size(); i++)
+	{
+		BlockFunction func = functions[i];
+		p_list->push_back(func.method_info);
+	}
+	for(int i = 0; i < composited_blocks.size(); i++)
+	{
+		Composition comp = composited_blocks[i];
+		if(!p_list->find(comp.function.method_info))
+		{ // only add to method list when not present in compositing script
+			p_list->push_back(comp.function.method_info);
+		}
+	}
+	
+	List<MethodInfo> base_funcs;
+	base->get_script_method_list(&base_funcs);
+	for(int i = 0; i < base_funcs.size(); i++)
+	{
+		MethodInfo info = base_funcs[i];
+		if(!p_list->find(info))
+		{ // only add to method list when not present in child script
+			p_list->push_back(info);
+		}
+	}
 }
 
 void C11RScript::get_script_property_list(List<PropertyInfo> *p_list) const 
 {
-
+	for(int i = 0; i < properties.size(); i++)
+	{
+		C11RProperty prop = properties[i];
+		p_list->push_back(prop.property);
+	}
+	base->get_script_property_list(p_list);
+	// intentionally, we do not add properties from composited blocks. Just from the base because that's important for adding the script to nodes
 }
 
 int C11RScript::get_member_line(const StringName &p_member) const 
@@ -176,29 +251,61 @@ void C11RScript::get_members(Set<StringName> *p_constants){}
 ////////////////////////////////////////////
 
 bool C11RScriptInstance::set(const StringName &p_name, const Variant &p_value) {
-	return false;
+	bool r_valid;
+	script->set(p_name, p_value, &r_valid);
+	return r_valid;
 }
 
 bool C11RScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
-	return false;
+	bool r_valid;
+	Variant value = script->get(p_name, &r_valid);
+	if(!r_valid) return false;
+
+	r_ret = value;
+	return true;
 }
 void C11RScriptInstance::get_property_list(List<PropertyInfo> *p_properties) const {
+	script->get_property_list(p_properties);
 }
+
 Variant::Type C11RScriptInstance::get_property_type(const StringName &p_name, bool *r_is_valid) const {
-	return Variant::NIL;
+	return Variant::NIL; // FIXME
 }
 
 void C11RScriptInstance::get_method_list(List<MethodInfo> *p_list) const {
+	script->get_method_list(p_list);
 }
 bool C11RScriptInstance::has_method(const StringName &p_method) const {
-	return false;
+	return script->has_method(p_method);
 }
 
 Variant C11RScriptInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
+	if(script->has_method(p_method))
+	{
+		return script->call(p_method, p_args, p_argcount, r_error);
+	}
 	return Variant();
 }
 
 void C11RScriptInstance::notification(int p_notification) {
+	print_line(vformat("c11r script instance received notification ID %s", itos(p_notification)));
+	//notification is not virtual, it gets called at ALL levels just like in C.
+	// Variant value = p_notification;
+	// const Variant *args[1] = { &value };
+
+	// Script *sptr = script.ptr();
+	// while (sptr) {
+	// 	if (sptr->has_method("notification")) { // I don't like hardcoding this. Is there a real alternative?
+	// 		Variant::CallError err;
+	// 		sptr->call("notification", args, 1, err);
+	// 		// E->get()->call(this, args, 1, err);
+	// 		if (err.error != Variant::CallError::CALL_OK) {
+	// 			//print error about notification call
+	// 		}
+	// 	}
+	// 	sptr = sptr->get_base_script().ptr();
+	// }
+	// 
 }
 
 String C11RScriptInstance::to_string(bool *r_valid) {
@@ -225,14 +332,16 @@ String C11RScriptInstance::to_string(bool *r_valid) {
 }
 
 Ref<Script> C11RScriptInstance::get_script() const {
-	return nullptr;
+	return script;
 }
 
 MultiplayerAPI::RPCMode C11RScriptInstance::get_rpc_mode(const StringName &p_method) const {
+	// TODO implement RPCMode assignments for functions
 	return MultiplayerAPI::RPC_MODE_DISABLED;
 }
 
 MultiplayerAPI::RPCMode C11RScriptInstance::get_rset_mode(const StringName &p_variable) const {
+	// TODO implement RSET assignments for properties/variables
 	return MultiplayerAPI::RPC_MODE_DISABLED;
 }
 ScriptLanguage *C11RScriptInstance::get_language() {

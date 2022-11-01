@@ -190,6 +190,11 @@ C11REditor::C11REditor()
     popup_add_block->connect("id_pressed", this, "_add_block_by_id");
     popup_add_block->add_color_override("font_color", _color_from_type(Variant::OBJECT, true)); // force using the _color_from_type method because we don't use it yet...
 
+    // create edit menu
+    edit_menu = memnew(HBoxContainer);
+    Label *lbl_menu = memnew(Label);
+    lbl_menu->set_text("Edit Menu");
+    edit_menu->add_child(lbl_menu);
 }
 
 C11REditor::~C11REditor()
@@ -305,10 +310,15 @@ bool C11REditor::is_unsaved()
 }
 
 Variant C11REditor::get_edit_state(){
-    return Variant();
+    Dictionary state;
+    // add state information to dictionary
+	return state;
 }
 
-void C11REditor::set_edit_state(const Variant &p_state){}
+void C11REditor::set_edit_state(const Variant &p_state){
+    // load stat from dictionary (p_state)
+
+}
 
 void C11REditor::goto_line(int p_line, bool p_with_error){}
 
@@ -346,7 +356,7 @@ void C11REditor::set_debugger_active(bool p_active){}
 void C11REditor::set_tooltip_request_func(String p_method, Object *p_obj){}
 
 Control *C11REditor::get_edit_menu(){
-    return nullptr;
+    return edit_menu;
 }
 
 void C11REditor::clear_edit_menu(){}
@@ -361,18 +371,17 @@ static void register_editor_callback()
 
     ED_SHORTCUT("choreographer/delete_selected", TTR("Delete Selected"), KEY_DELETE);
 	ED_SHORTCUT("choreographer/toggle_breakpoint", TTR("Toggle Breakpoint"), KEY_F9);
-	ED_SHORTCUT("choreographer/find_node_type", TTR("Find Node Type"), KEY_MASK_CMD + KEY_F);
-	ED_SHORTCUT("choreographer/copy_nodes", TTR("Copy Nodes"), KEY_MASK_CMD + KEY_C);
-	ED_SHORTCUT("choreographer/cut_nodes", TTR("Cut Nodes"), KEY_MASK_CMD + KEY_X);
-	ED_SHORTCUT("choreographer/paste_nodes", TTR("Paste Nodes"), KEY_MASK_CMD + KEY_V);
+	ED_SHORTCUT("choreographer/find_blocks_type", TTR("Find Block Type"), KEY_MASK_CMD + KEY_F);
+	ED_SHORTCUT("choreographer/copy_blocks", TTR("Copy Blocks"), KEY_MASK_CMD + KEY_C);
+	ED_SHORTCUT("choreographer/cut_blocks", TTR("Cut Blocks"), KEY_MASK_CMD + KEY_X);
+	ED_SHORTCUT("choreographer/paste_blocks", TTR("Paste Blocks"), KEY_MASK_CMD + KEY_V);
 	ED_SHORTCUT("choreographer/create_function", TTR("Make Function"), KEY_MASK_CMD + KEY_G);
-	ED_SHORTCUT("choreographer/refresh_nodes", TTR("Refresh Graph"), KEY_MASK_CMD + KEY_R);
+	ED_SHORTCUT("choreographer/refresh_blocks", TTR("Refresh Graph"), KEY_MASK_CMD + KEY_R);
 	ED_SHORTCUT("choreographer/edit_member", TTR("Edit Member"), KEY_MASK_CMD + KEY_E);
 	ED_SHORTCUT("choreographer/add_block", TTR("Add Block"), KEY_MASK_SHIFT + KEY_A);
 }
 
 void C11REditor::register_editor(){
-    print_line("Adding plugin init callback");
     EditorNode::add_plugin_init_callback(register_editor_callback);
 }
 
