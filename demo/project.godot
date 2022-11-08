@@ -11,7 +11,12 @@ config_version=4
 [application]
 
 config/name="Demo"
+run/main_scene="res://MainScene.tscn"
 config/icon="res://icon.png"
+
+[choreographer]
+
+block_packs/default_packs=[ "res://modularity_tests/test_blockpack.tres" ]
 
 [gui]
 

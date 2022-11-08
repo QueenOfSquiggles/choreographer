@@ -281,7 +281,7 @@ RES C11REditor::get_edited_resource() const
 }
 
 void C11REditor::set_edited_resource(const RES &p_res){
-    current_script = p_res;
+    if(p_res.is_valid()) current_script = p_res;
 }
 
 void C11REditor::enable_editor(){}

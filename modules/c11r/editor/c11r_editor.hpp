@@ -10,7 +10,7 @@
 #include "../packs/block_pack.hpp"
 
 // FIXME remove before release builds
-//#define TOOLS_ENABLED
+// #define TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
 
@@ -18,7 +18,7 @@ class C11REditor: public ScriptEditorBase
 {
     GDCLASS(C11REditor, ScriptEditorBase);
 
-    Ref<C11RScript> script;
+    Ref<C11RScript> script; // FIXME delete (see current_script below)
 
     UndoRedo *undo_redo;
 
@@ -117,6 +117,7 @@ public:
 	_C11REditor();
     ~_C11REditor();
 };
-#endif
+
+#endif // TOOLS_ENABLED
 
 #endif // C11R_EDITOR_H

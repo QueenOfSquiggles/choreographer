@@ -29,3 +29,5 @@ demo/.import/
 #   Other
 #
 
+*.kdev4
+.clangd

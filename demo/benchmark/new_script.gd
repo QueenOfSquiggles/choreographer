@@ -1,8 +1,6 @@
 extends Node
 
-
-var ch_script : C11RScript
+onready var child := $Node2D
 
 func _ready():
-	ch_script = C11RScript.new()
-	ResourceSaver.save("res://saving_script.c11r", ch_script)
+	child.call("custom_func")

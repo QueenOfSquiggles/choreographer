@@ -1,12 +1,12 @@
-
 #include "c11r_lang.hpp"
 
 #include "core/core_string_names.h"
 #include "core/os/os.h"
 #include "core/project_settings.h"
 #include "scene/main/node.h"
-#include "modules/visual_script/visual_script_func_nodes.h"
-#include "modules/visual_script/visual_script_nodes.h"
+
+#include "packs/block_pack.hpp"
+
 
 void Block::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_set_block_namespace"), &Block::_set_block_namespace);
@@ -51,24 +51,87 @@ C11RScript::C11RScript() {
 C11RScript::~C11RScript() {
 }
 
-void C11RScript::load(Ref<ConfigFile> p_configuration)
+void C11RScript::_bind_methods()
+{
+	print_line("Binding class DB functions for c11r");
+	ClassDB::bind_method(D_METHOD("custom_func"), &C11RScript::internal_ready);
+}
+
+void C11RScript::load(Ref<ConfigFile> p_config)
 {
 	// TODO load information
 	print_line("Loading C11RScript from custom loader (ConfigFile)");
+
+
+	String cur_section = "";
+	{ // block pack section
+		cur_section = "block_packs";
+		List<String> block_pack_keys;
+		p_config->get_section_keys(cur_section, &block_pack_keys);
+		for(int i = 0; i < block_pack_keys.size(); i++)
+		{
+			String key = block_pack_keys[i];
+			String path = p_config->get_value(cur_section, key, "null");
+			if (path == "null")
+			{
+				print_line("Failed to get proper path for config block pack dep");
+				continue;
+			}
+			Ref<BlockPack> pack = ResourceLoader::load(path, "BlockPack");
+			if (pack.is_null())
+			{
+				print_line("Failed to load block pack");
+				continue;
+			}
+			print_line(vformat("Registering block pack into script dependencies: %s", pack->namespace_prefix));
+			block_pack_dependencies.push_back(pack);
+		}
+	}
+
+	// This little algorithm seeks through the entire  
+	// List<String> sections;
+	// p_configuration->get_sections(&sections);
+	// for(int i = 0; i < sections.size(); i++)
+	// {
+	// 	String sec = sections[i];
+	// 	List<String> keys;
+	// 	p_configuration->get_section_keys(sec, &keys);
+	// 	if (sec == "metadata") {
+	// 		#ifndef TOOLS_ENABLED
+	// 			print_line("Skipping loading the metadata header because no editor support is needed in this configuration");
+	// 			continue; // when there are no tools (runtime) don't load editor information so we can save on resource use and processing time
+	// 		#endif
+	// 	}
+	// 	for(int j = 0; j < keys.size(); j++)
+	// 	{
+	// 		String key = keys[j];
+	// 		Variant value = p_configuration->get_value(sec, key);
+	// 		print_line(vformat("C11RScript loaded value: %s:%s = %s", sec, key, value)); // print out loaded data
+	// 	}
+	// }
 }
 
 Ref<ConfigFile> C11RScript::save() const
 {
 	Ref<ConfigFile> cfg;
 	cfg.instance();
-	cfg->set_value("header", "number", 0.5);
-	cfg->set_value("header", "name", "QueenOfSquiggles");
-	cfg->set_value("metadata", "garbage", rand());
-	cfg->set_value("metadata", "trash", rand());
-	cfg->set_value("metadata", "rubbish", rand());
+
+	// block pack references
+	for(int i = 0; i < block_pack_dependencies.size(); i++)
+	{
+		Ref<BlockPack> pack = block_pack_dependencies[i];
+		if (pack.is_null()) continue;
+		cfg->set_value("block packs", pack->namespace_prefix, pack->get_path());
+	}
+
+
 	return cfg;
 }
 
+void C11RScript::internal_ready()
+{
+	print_line("C11RScript - Ready");
+}
 
 // overrides
 bool C11RScript::can_instance() const {
@@ -191,6 +254,14 @@ bool C11RScript::has_script_signal(const StringName &p_signal) const
 	return false;
 }
 
+
+Variant C11RScript::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
+
+	// TODO call functions as Block Entries
+
+	return Script::call(p_method, p_args, p_argcount, r_error);
+}
+
 void C11RScript::get_script_signal_list(List<MethodInfo> *r_signals) const 
 {}
 
@@ -201,6 +272,7 @@ bool C11RScript::get_property_default_value(const StringName &p_property, Varian
 
 void C11RScript::get_script_method_list(List<MethodInfo> *p_list) const 
 {
+	ClassDB::get_method_list("C11RScript", p_list);
 
 	for(int i = 0; i < functions.size(); i++)
 	{
@@ -216,14 +288,17 @@ void C11RScript::get_script_method_list(List<MethodInfo> *p_list) const
 		}
 	}
 	
-	List<MethodInfo> base_funcs;
-	base->get_script_method_list(&base_funcs);
-	for(int i = 0; i < base_funcs.size(); i++)
+	if(base.is_valid())
 	{
-		MethodInfo info = base_funcs[i];
-		if(!p_list->find(info))
-		{ // only add to method list when not present in child script
-			p_list->push_back(info);
+		List<MethodInfo> base_funcs;
+		base->get_script_method_list(&base_funcs);
+		for(int i = 0; i < base_funcs.size(); i++)
+		{
+			MethodInfo info = base_funcs[i];
+			if(!p_list->find(info))
+			{ // only add to method list when not present in child script
+				p_list->push_back(info);
+			}
 		}
 	}
 }
@@ -235,7 +310,10 @@ void C11RScript::get_script_property_list(List<PropertyInfo> *p_list) const
 		C11RProperty prop = properties[i];
 		p_list->push_back(prop.property);
 	}
-	base->get_script_property_list(p_list);
+	if (base.is_valid()) 
+	{
+		base->get_script_property_list(p_list);
+	}
 	// intentionally, we do not add properties from composited blocks. Just from the base because that's important for adding the script to nodes
 }
 
@@ -488,8 +566,6 @@ int C11RScriptLanguage::profiling_get_frame_data(ProfilingInfo *p_info_arr, int 
 	return 0;
 }
 
-C11RScriptLanguage *C11RScriptLanguage::singleton = nullptr;
-
 void C11RScriptLanguage::add_register_func(const String &p_name, BlockRegisterFunc p_func) {
 	ERR_FAIL_COND(register_funcs.has(p_name));
 	register_funcs[p_name] = p_func;
@@ -512,8 +588,51 @@ void C11RScriptLanguage::get_registered_node_names(List<String> *r_names) {
 	}
 }
 
+Ref<Block> C11RScriptLanguage::get_block(const String &p_name) 
+{
+	if (registered_blocks.has(p_name))
+	{
+		return registered_blocks.find(p_name)->get();
+	}
+	print_error(vformat("Cannot find registered block '%s'", p_name));
+	return Ref<Block>();
+}
+
+
+C11RScriptLanguage *C11RScriptLanguage::singleton = nullptr;
+
 C11RScriptLanguage::C11RScriptLanguage() {
 	// use GLOBALDEF to define some settings
+	C11RScriptLanguage::singleton = this;
+	Array default_packs = GLOBAL_DEF("choreographer/block_packs/default_packs", Array());
+	// TODO relocate this to where it will be called when a project is opened (or reloaded)
+	// for(int i = 0; i < default_packs.size(); i++)
+	// {	// load default packs
+	// 	Variant pack = default_packs[i];
+	// 	if(pack.get_type() == Variant::STRING)
+	// 	{
+	// 		// path
+	// 		RES res = ResourceLoader::load(pack);
+	// 		if(res.is_valid()){
+	// 			Ref<BlockPack> block_pack = res;
+	// 			if (block_pack.is_valid()) {
+	// 				// we have a valid block pack!
+	// 				print_line(vformat("Loading block pack with namespace prefix `%s`", block_pack->namespace_prefix));
+	// 			}
+	// 		} else {
+	// 			print_line(vformat("Failed to load block pack from path: %s", pack));
+	// 		}
+
+
+	// 	} else if (pack.get_type() == Variant::OBJECT) {
+	// 		// resource reference?
+	// 		// TODO handle resource reference
+	// 	} else {
+	// 		print_error(vformat("Invalid pack entry: %s", pack));
+	// 	}
+
+	// }
+
 }
 
 C11RScriptLanguage::~C11RScriptLanguage() {

@@ -10,6 +10,7 @@
 class C11RScriptInstance;
 class C11RScript;
 class BlockInstance;
+class BlockPack;
 
 class Block : public Resource {
 	GDCLASS(Block, Resource);
@@ -41,7 +42,7 @@ public:
 class C11RScript : public Script {
 	GDCLASS(C11RScript, Script);
 
-	RES_BASE_EXTENSION(C11R_LANG_FILE_EXT);
+	//RES_BASE_EXTENSION(C11R_LANG_FILE_EXT);
 
 private:
 	friend class C11RScriptInstance;
@@ -65,6 +66,7 @@ private:
 		BlockFunction function;
 	};
 
+	List<Ref<BlockPack>> block_pack_dependencies; // all block packs this script depends on. (only load what we need)
 	Ref<Script> base; // extend: single
 	List<Ref<Block>> blocks; // all blocks
 	List<Composition> composited_blocks; // extend: many
@@ -73,6 +75,8 @@ private:
 	List<BlockFunction> functions;
 	List<StringName> signals;
 
+protected:
+	static void _bind_methods();
 
 public:
 	bool is_sub_graph = false;
@@ -80,6 +84,10 @@ public:
 	// resource format loading
 	void load(Ref<ConfigFile> p_configuration);
 	Ref<ConfigFile> save() const;
+
+	// test function
+
+	void internal_ready();
 
 	// overrides
 	virtual bool can_instance() const;
@@ -99,6 +107,8 @@ public:
 
 	virtual bool has_method(const StringName &p_method) const;
 	virtual MethodInfo get_method_info(const StringName &p_method) const;
+	Variant call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error);
+
 
 	virtual bool is_tool() const;
 	virtual bool is_valid() const;
@@ -118,6 +128,8 @@ public:
 
 	virtual void get_constants(Map<StringName, Variant> *p_constants);
 	virtual void get_members(Set<StringName> *p_constants);
+
+	virtual bool overrides_external_editor() { return true; }
 
 	C11RScript();
 	~C11RScript();
@@ -154,6 +166,8 @@ typedef Ref<Block> (*BlockRegisterFunc)(const String &p_type);
 
 class C11RScriptLanguage : public ScriptLanguage {
 	Map<String, BlockRegisterFunc> register_funcs;
+
+	Map<String, Ref<Block>> registered_blocks;
 
 public:
 	static C11RScriptLanguage *singleton;
@@ -223,6 +237,7 @@ public:
 	void remove_register_func(const String &p_name);
 	Ref<Block> create_node_from_name(const String &p_name);
 	void get_registered_node_names(List<String> *r_names);
+	Ref<Block> get_block(const String &p_name);
 
 	C11RScriptLanguage();
 	~C11RScriptLanguage();
