@@ -179,22 +179,67 @@ C11REditor::C11REditor()
 
 
     // create popups
+    {
+        // Add Block Popup
+        {
+            popup_add_block = memnew(PopupMenu);
+            panel->add_child(popup_add_block);
+            popup_add_block->add_item("Item 1", 0);
+            popup_add_block->add_item("Item 2", 1);
+            popup_add_block->add_item("Item 3", 2);
+            popup_add_block->add_item("Item 4", 3);
+            popup_add_block->add_item("Item 5", 4);
+            popup_add_block->connect("id_pressed", this, "_add_block_by_id");
+            popup_add_block->add_color_override("font_color", _color_from_type(Variant::OBJECT, true)); // force using the _color_from_type method because we don't use it yet...
+        }
 
-    popup_add_block = memnew(PopupMenu);
-    panel->add_child(popup_add_block);
-    popup_add_block->add_item("Item 1", 0);
-    popup_add_block->add_item("Item 2", 1);
-    popup_add_block->add_item("Item 3", 2);
-    popup_add_block->add_item("Item 4", 3);
-    popup_add_block->add_item("Item 5", 4);
-    popup_add_block->connect("id_pressed", this, "_add_block_by_id");
-    popup_add_block->add_color_override("font_color", _color_from_type(Variant::OBJECT, true)); // force using the _color_from_type method because we don't use it yet...
+        // Menu Option - Change Base Script
+        {
+            popup_option_set_base_script = memnew(PopupPanel);
+            panel->add_child(popup_option_set_base_script);
+            VBoxContainer *vbox = memnew(VBoxContainer);
+            popup_option_set_base_script->add_child(vbox);
+            
+            Label *lbl = memnew(Label);
+            lbl->set_text("Change Base Script");
+            vbox->add_child(lbl);
+
+            List<StringName> classes;
+            ClassDB::get_class_list(&classes);
+
+            OptionButton *option_class = memnew(OptionButton);
+            for(int i = 0; i < classes.size(); i++)
+            {
+                option_class->add_item(classes[i], i);
+            }
+            vbox->add_child(option_class);
+        }
+    }
 
     // create edit menu
-    edit_menu = memnew(HBoxContainer);
-    Label *lbl_menu = memnew(Label);
-    lbl_menu->set_text("Edit Menu");
-    edit_menu->add_child(lbl_menu);
+    {
+        edit_menu = memnew(HBoxContainer);
+        MenuButton *menu = memnew(MenuButton);
+        menu->set_text(TTR("C11R Script Options"));
+        PopupMenu *popup = menu->get_popup();
+        popup->add_item(TTR("Create New Function"), 0);
+        popup->add_item(TTR("Change Base Script"), 1);
+        popup->add_item(TTR("Composite Script"), 2);
+        popup->add_item(TTR("Add Node Pack"), 3);
+        edit_menu->add_child(menu);
+        popup->connect("id_pressed", this, "_option_menu_item"); // TODO options menu signal connection
+    }
+    // create side panel
+    {
+        side_panel = memnew(VBoxContainer);
+        Label* lbl = memnew(Label);
+        lbl->set_text("This is the side panel");
+        side_panel->add_child(lbl);
+        ScriptEditor::get_singleton()->get_left_list_split()->call_deferred("add_child", side_panel);
+    	side_panel->set_v_size_flags(SIZE_EXPAND_FILL);
+    }
+
+
 }
 
 C11REditor::~C11REditor()
@@ -227,13 +272,39 @@ void C11REditor::_input(const Ref<InputEvent> &p_event) {
 
 void C11REditor::_graph_gui_input(const Ref<InputEvent> &p_event) {
     bool do_add_block = false; 
+
+    // Keyboard Shortcuts
+    Ref<InputEventKey> key_event = p_event;
+    if (key_event.is_valid() && key_event->is_pressed()) {
+        if (ED_IS_SHORTCUT("choreographer/delete_selected", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/toggle_breakpoint", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/find_blocks_type", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/copy_blocks", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/cut_blocks", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/paste_blocks", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/create_function", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/refresh_blocks", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/edit_member", p_event)) {
+            
+        } else if (ED_IS_SHORTCUT("choreographer/add_block", p_event)) {
+            do_add_block = true;
+        } else if (ED_IS_SHORTCUT("choreographer/toggle_inspector_panel", p_event)) {
+            _toggle_inspector_visibility();
+        }
+    }
+
+    // Special Cases
 	{ // right click -> add block
         Ref<InputEventMouseButton> key = p_event;
-        do_add_block = (key.is_valid() && key->is_pressed() && key->get_button_index() == BUTTON_MASK_RIGHT);
-    }
-    { // shift+A -> add block
-        Ref<InputEventKey> key = p_event;
-        do_add_block = do_add_block || (key.is_valid() && key->get_shift() && key->get_scancode() == KEY_A);
+        do_add_block = do_add_block || (key.is_valid() && key->is_pressed() && key->get_button_index() == BUTTON_MASK_RIGHT);
     }
 
     if(do_add_block)
@@ -252,6 +323,24 @@ void C11REditor::_toggle_inspector_visibility()
     inspection_panel->set_visible(!vis);
 }
 
+void C11REditor::_option_menu_item(int index){
+    switch (index) 
+    {
+        case 1: 
+            _popup_option_change_base_script();
+            break;
+        default:
+            print_line(vformat("Currently Unhandled C11R Menu Option index: %s", itos(index)));
+            break;
+    }
+}
+
+
+void C11REditor::_popup_option_change_base_script(){
+    popup_option_set_base_script->popup_centered_ratio(0.5f);
+}
+
+
 static ScriptEditorBase *create_editor(const RES &p_resource) {
 	if (Object::cast_to<C11RScript>(*p_resource)) {
         return memnew(C11REditor);
@@ -267,6 +356,8 @@ void C11REditor::_bind_methods(){
     ClassDB::bind_method(D_METHOD("_input"), &C11REditor::_input);
     ClassDB::bind_method(D_METHOD("_add_block_by_id"), &C11REditor::_add_block_by_id);
     ClassDB::bind_method(D_METHOD("_graph_gui_input"), &C11REditor::_graph_gui_input);
+    ClassDB::bind_method(D_METHOD("_option_menu_item"), &C11REditor::_option_menu_item);
+    ClassDB::bind_method(D_METHOD("_popup_option_change_base_script"), &C11REditor::_popup_option_change_base_script);
 }
 
 void C11REditor::add_syntax_highlighter(SyntaxHighlighter *p_highlighter){}
@@ -379,6 +470,7 @@ static void register_editor_callback()
 	ED_SHORTCUT("choreographer/refresh_blocks", TTR("Refresh Graph"), KEY_MASK_CMD + KEY_R);
 	ED_SHORTCUT("choreographer/edit_member", TTR("Edit Member"), KEY_MASK_CMD + KEY_E);
 	ED_SHORTCUT("choreographer/add_block", TTR("Add Block"), KEY_MASK_SHIFT + KEY_A);
+    ED_SHORTCUT("choreographer/toggle_inspector_panel", TTR("Toggle Inspector Panel"), KEY_MASK_ALT + KEY_Z);
 }
 
 void C11REditor::register_editor(){

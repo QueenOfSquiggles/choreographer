@@ -38,10 +38,16 @@ class C11REditor: public ScriptEditorBase
 
 	PopupMenu *popup_add_block;
 
+	VBoxContainer* side_panel;
+
+	PopupPanel *popup_option_set_base_script;
+
 protected:
 	void _change_tab(Control *new_tab);
 	void _add_block_by_id(int id);
 	void _graph_gui_input(const Ref<InputEvent> &p_event);
+	void _option_menu_item(int index);
+	void _popup_option_change_base_script();
 
     static void _bind_methods();
 

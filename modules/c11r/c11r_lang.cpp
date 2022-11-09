@@ -59,7 +59,6 @@ void C11RScript::_bind_methods()
 
 void C11RScript::load(Ref<ConfigFile> p_config)
 {
-	// TODO load information
 	print_line("Loading C11RScript from custom loader (ConfigFile)");
 
 
@@ -87,28 +86,6 @@ void C11RScript::load(Ref<ConfigFile> p_config)
 			block_pack_dependencies.push_back(pack);
 		}
 	}
-
-	// This little algorithm seeks through the entire  
-	// List<String> sections;
-	// p_configuration->get_sections(&sections);
-	// for(int i = 0; i < sections.size(); i++)
-	// {
-	// 	String sec = sections[i];
-	// 	List<String> keys;
-	// 	p_configuration->get_section_keys(sec, &keys);
-	// 	if (sec == "metadata") {
-	// 		#ifndef TOOLS_ENABLED
-	// 			print_line("Skipping loading the metadata header because no editor support is needed in this configuration");
-	// 			continue; // when there are no tools (runtime) don't load editor information so we can save on resource use and processing time
-	// 		#endif
-	// 	}
-	// 	for(int j = 0; j < keys.size(); j++)
-	// 	{
-	// 		String key = keys[j];
-	// 		Variant value = p_configuration->get_value(sec, key);
-	// 		print_line(vformat("C11RScript loaded value: %s:%s = %s", sec, key, value)); // print out loaded data
-	// 	}
-	// }
 }
 
 Ref<ConfigFile> C11RScript::save() const
