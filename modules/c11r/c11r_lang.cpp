@@ -63,10 +63,19 @@ void C11RScript::load(Ref<ConfigFile> p_config)
 
 
 	String cur_section = "";
+	if (p_config->has_section("Script"))
+	{ // script section
+		cur_section = "Script";
+		class_name = p_config->get_value(cur_section, "class_name", "");
+		base_class= p_config->get_value(cur_section, "base_class", "");
+	}
+
+	if (p_config->has_section("block_packs"))
 	{ // block pack section
 		cur_section = "block_packs";
 		List<String> block_pack_keys;
 		p_config->get_section_keys(cur_section, &block_pack_keys);
+
 		for(int i = 0; i < block_pack_keys.size(); i++)
 		{
 			String key = block_pack_keys[i];
@@ -93,6 +102,9 @@ Ref<ConfigFile> C11RScript::save() const
 	Ref<ConfigFile> cfg;
 	cfg.instance();
 
+	cfg->set_value("Script", "class_name", class_name);
+	cfg->set_value("Script", "base_class", base_class);
+
 	// block pack references
 	for(int i = 0; i < block_pack_dependencies.size(); i++)
 	{
@@ -116,38 +128,84 @@ bool C11RScript::can_instance() const {
 }
 
 Ref<Script> C11RScript::get_base_script() const {
-	return base;
+	
+	return Ref<Script>();
 }
 
-bool C11RScript::inherits_script(const Ref<Script> &p_script) const {
-	return false; // TODO recursive lookup
+bool C11RScript::inherits_script(const Ref<Script> &p_script) const 
+{
+	if (p_script.is_null()) {
+		return false;
+	}
+	Ref<C11RScript> c11r = p_script;
+	return this == c11r.ptr();
+	
+	// FIXME 
+	// Ref<C11RScript> c11r_script = p_script;
+	// if(c11r_script.is_null()) {
+	// 	Ref<GDScript> gd = this->base;
+	// 	while (gd.is_valid()) {
+	// 	if (gd.ptr() == p_script.ptr()) {
+	// 		return true;
+	// 	}
+
+	// 	gd = gd->get_base();
+	// }
+
+	// } else {
+	// 	return p_script == this;
+	// }
+	// return false;
 }
 
 StringName C11RScript::get_instance_base_type() const 
 {
-	if(base.is_valid())
-	{
-		return base->get_instance_base_type();
-	}
-	return StringName();
+	// print_line(vformat("C11R Class %s extends %s", class_name, base_class));
+	return base_class;
 }
 
-ScriptInstance *C11RScript::instance_create(Object *p_this) 
+ScriptInstance *C11RScript::instance_create(Object *p_this)  
 {
-	if(!Object::cast_to<C11RScript>(p_this))
-	{
-		return nullptr;
-	}
+#ifdef TOOLS_ENABLED
 
-	C11RScriptInstance *instance = memnew(C11RScriptInstance);
-	instance->script = *(Object::cast_to<Ref<C11RScript>>(p_this));
-	// TODO add in any instance dependencies
+	if (!ScriptServer::is_scripting_enabled()) {
+		PlaceHolderScriptInstance *sins = memnew(PlaceHolderScriptInstance(C11RScriptLanguage::singleton, Ref<Script>((Script *)this), p_this));
+		placeholders.insert(sins);
+
+		// TODO handle script export variables
+		// List<PropertyInfo> pinfo;
+		// Map<StringName, Variant> values;
+
+		// for (Map<StringName, Variable>::Element *E = variables.front(); E; E = E->next()) {
+		// 	if (!E->get()._export) {
+		// 		continue;
+		// 	}
+
+		// 	PropertyInfo p = E->get().info;
+		// 	p.name = String(E->key());
+		// 	pinfo.push_back(p);
+		// 	values[p.name] = E->get().default_value;
+		// }
+
+		// sins->update(pinfo, values);
+
+		return sins;
+	}
+#endif
+
+	C11RScriptInstance*instance = memnew(C11RScriptInstance);
+	instance->create(Ref<C11RScript>(this), p_this);
+
+	C11RScriptLanguage::singleton->lock.lock();
+	instances[p_this] = instance;
+	C11RScriptLanguage::singleton->lock.unlock();
+
 	return instance;
 }
 
 bool C11RScript::instance_has(const Object *p_this) const 
 {
-	return false;
+	return instances.has((Object *)p_this);
 }
 
 bool C11RScript::has_source_code() const 
@@ -265,19 +323,19 @@ void C11RScript::get_script_method_list(List<MethodInfo> *p_list) const
 		}
 	}
 	
-	if(base.is_valid())
-	{
-		List<MethodInfo> base_funcs;
-		base->get_script_method_list(&base_funcs);
-		for(int i = 0; i < base_funcs.size(); i++)
-		{
-			MethodInfo info = base_funcs[i];
-			if(!p_list->find(info))
-			{ // only add to method list when not present in child script
-				p_list->push_back(info);
-			}
-		}
-	}
+	// if(base.is_valid())
+	// {
+	// 	List<MethodInfo> base_funcs;
+	// 	base->get_script_method_list(&base_funcs);
+	// 	for(int i = 0; i < base_funcs.size(); i++)
+	// 	{
+	// 		MethodInfo info = base_funcs[i];
+	// 		if(!p_list->find(info))
+	// 		{ // only add to method list when not present in child script
+	// 			p_list->push_back(info);
+	// 		}
+	// 	}
+	// }
 }
 
 void C11RScript::get_script_property_list(List<PropertyInfo> *p_list) const 
@@ -287,10 +345,10 @@ void C11RScript::get_script_property_list(List<PropertyInfo> *p_list) const
 		C11RProperty prop = properties[i];
 		p_list->push_back(prop.property);
 	}
-	if (base.is_valid()) 
-	{
-		base->get_script_property_list(p_list);
-	}
+	// if (base.is_valid()) 
+	// {
+	// 	base->get_script_property_list(p_list);
+	// }
 	// intentionally, we do not add properties from composited blocks. Just from the base because that's important for adding the script to nodes
 }
 
@@ -343,24 +401,25 @@ Variant C11RScriptInstance::call(const StringName &p_method, const Variant **p_a
 }
 
 void C11RScriptInstance::notification(int p_notification) {
-	print_line(vformat("c11r script instance received notification ID %s", itos(p_notification)));
-	//notification is not virtual, it gets called at ALL levels just like in C.
-	// Variant value = p_notification;
-	// const Variant *args[1] = { &value };
+	// print_line(vformat("c11r script instance received notification ID %s", itos(p_notification)));
+	// notification is not virtual, it gets called at ALL levels just like in C.
+	Variant value = p_notification;
+	const Variant *args[1] = { &value };
 
-	// Script *sptr = script.ptr();
-	// while (sptr) {
-	// 	if (sptr->has_method("notification")) { // I don't like hardcoding this. Is there a real alternative?
-	// 		Variant::CallError err;
-	// 		sptr->call("notification", args, 1, err);
-	// 		// E->get()->call(this, args, 1, err);
-	// 		if (err.error != Variant::CallError::CALL_OK) {
-	// 			//print error about notification call
-	// 		}
-	// 	}
-	// 	sptr = sptr->get_base_script().ptr();
-	// }
-	// 
+	Script *sptr = script.ptr();
+	while (sptr) {
+		if (sptr->has_method("notification")) { // I don't like hardcoding this. Is there a real alternative?
+			Variant::CallError err;
+			sptr->call("notification", args, 1, err);
+			// E->get()->call(this, args, 1, err);
+			if (err.error != Variant::CallError::CALL_OK) {
+				//print error about notification call
+				ERR_PRINT("Error from notification in c11r script instance");
+			}
+		}
+		sptr = sptr->get_base_script().ptr();
+	}
+	
 }
 
 String C11RScriptInstance::to_string(bool *r_valid) {
@@ -403,6 +462,14 @@ ScriptLanguage *C11RScriptInstance::get_language() {
 	return C11RScriptLanguage::singleton;
 }
 
+void C11RScriptInstance::create(Ref<C11RScript> p_script, Object * p_owner)
+{
+	script = p_script;
+	owner = p_owner;
+	// TODO Consume data from the script into the instance
+}
+
+
 C11RScriptInstance::C11RScriptInstance() {
 }
 
@@ -443,6 +510,11 @@ void C11RScriptLanguage::get_string_delimiters(List<String> *p_delimiters) const
 Ref<Script> C11RScriptLanguage::get_template(const String &p_class_name, const String &p_base_class_name) const {
 	Ref<C11RScript> script;
 	script.instance();
+	script->class_name = p_class_name;
+	script->base_class = p_base_class_name;
+
+	print_line(vformat("Creating a C11R Script at %s with base class %s", p_class_name, p_base_class_name));
+
 	return script;
 }
 
@@ -460,10 +532,10 @@ Script *C11RScriptLanguage::create_script() const {
 	return memnew(C11RScript);
 }
 bool C11RScriptLanguage::has_named_classes() const {
-	return false;
+	return true;
 }
 bool C11RScriptLanguage::supports_builtin_mode() const {
-	return true;
+	return false;
 }
 int C11RScriptLanguage::find_function(const String &p_function, const String &p_code) const {
 	return -1;
@@ -553,7 +625,7 @@ void C11RScriptLanguage::remove_register_func(const String &p_name) {
 	register_funcs.erase(p_name);
 }
 
-Ref<Block> C11RScriptLanguage::create_node_from_name(const String &p_name) {
+Ref<Block> C11RScriptLanguage::create_node_from_name(const String &p_name) { // TODO rename
 	ERR_FAIL_COND_V(!register_funcs.has(p_name), Ref<Block>());
 
 	return register_funcs[p_name](p_name);

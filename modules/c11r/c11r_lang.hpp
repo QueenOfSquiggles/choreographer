@@ -4,6 +4,7 @@
 #include "core/os/thread.h"
 #include "core/script_language.h"
 #include "core/io/config_file.h"
+#include "modules/gdscript/gdscript.h"
 
 #define C11R_LANG_FILE_EXT "c11r"
 
@@ -46,18 +47,21 @@ class C11RScript : public Script {
 
 private:
 	friend class C11RScriptInstance;
+	friend class C11RScriptLanguage;
 
 	struct BlockFunction
 	{
 		MethodInfo method_info;
 		Set<Ref<Block>> execution_order;
 	};
+
 	struct C11RProperty
 	{
 		int internal_id;
 		bool exported;
 		PropertyInfo property;
 	};
+
 	struct Composition
 	{
 		StringName name;
@@ -66,14 +70,25 @@ private:
 		BlockFunction function;
 	};
 
+	StringName class_name = "broken";
+	StringName base_class = "broken"; // extend: single
+
 	List<Ref<BlockPack>> block_pack_dependencies; // all block packs this script depends on. (only load what we need)
-	Ref<Script> base; // extend: single
 	List<Ref<Block>> blocks; // all blocks
 	List<Composition> composited_blocks; // extend: many
 
 	List<C11RProperty> properties; // internal
 	List<BlockFunction> functions;
 	List<StringName> signals;
+
+	Map<Object *, C11RScriptInstance *> instances;
+
+#ifdef TOOLS_ENABLED
+	Set<PlaceHolderScriptInstance *> placeholders;
+	//void _update_placeholder(PlaceHolderScriptInstance *p_placeholder);
+	// virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
+	// void _update_placeholders();
+#endif
 
 protected:
 	static void _bind_methods();
@@ -137,8 +152,9 @@ public:
 
 class C11RScriptInstance : public ScriptInstance {
 	friend class C11RScriptLanguage; //for debugger
-public:
 	Ref<C11RScript> script;
+	Object* owner;
+public:
 
 	virtual bool set(const StringName &p_name, const Variant &p_value);
 	virtual bool get(const StringName &p_name, Variant &r_ret) const;
@@ -157,6 +173,8 @@ public:
 
 	virtual MultiplayerAPI::RPCMode get_rpc_mode(const StringName &p_method) const;
 	virtual MultiplayerAPI::RPCMode get_rset_mode(const StringName &p_variable) const;
+
+	void create(Ref<C11RScript> p_script, Object * p_owner);
 
 	C11RScriptInstance();
 	~C11RScriptInstance();

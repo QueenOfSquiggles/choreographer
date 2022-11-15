@@ -1,0 +1,4 @@
+[Script]
+
+class_name="TestNode"
+base_class="Node"
