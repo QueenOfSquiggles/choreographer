@@ -52,13 +52,14 @@ private:
 	struct BlockFunction
 	{
 		MethodInfo method_info;
-		Set<Ref<Block>> execution_order;
+		Set<Ref<Block>> execution_order; // TODO maybe generate when consuming data at instance creation
 	};
 
 	struct C11RProperty
 	{
 		int internal_id;
 		bool exported;
+		Variant default_value;
 		PropertyInfo property;
 	};
 
@@ -93,6 +94,8 @@ private:
 protected:
 	static void _bind_methods();
 
+	int debug_number = 0;
+
 public:
 	bool is_sub_graph = false;
 
@@ -103,6 +106,14 @@ public:
 	// test function
 
 	void internal_ready();
+
+	void _ready();
+
+	void set_debug_number(int p_value);
+	int get_debug_number();
+
+	// editor help funcs
+	void set_base_script(String &p_base_script);
 
 	// overrides
 	virtual bool can_instance() const;
@@ -168,6 +179,7 @@ public:
 	String to_string(bool *r_valid);
 
 	virtual Ref<Script> get_script() const;
+	Object* get_owner();
 
 	virtual ScriptLanguage *get_language();
 

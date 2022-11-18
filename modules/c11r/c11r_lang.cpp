@@ -16,7 +16,7 @@ void Block::_bind_methods() {
 	block_call_func.name="_call_block";
 	block_call_func.arguments.push_back(PropertyInfo(Variant::ARRAY, "arg_stack"));
 	block_call_func.return_val = PropertyInfo(Variant::ARRAY, "return_arg_stack");
-	ClassDB::add_virtual_method("Block", block_call_func);
+	ClassDB::add_virtual_method("Block", block_call_func); // TODO use the macro for binding this
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "block_namespace", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR),"_set_block_namespace", "_get_block_namespace");
 	ADD_SIGNAL(MethodInfo("ports_changed"));
@@ -55,6 +55,33 @@ void C11RScript::_bind_methods()
 {
 	print_line("Binding class DB functions for c11r");
 	ClassDB::bind_method(D_METHOD("custom_func"), &C11RScript::internal_ready);
+
+	ClassDB::bind_method(D_METHOD("_enter_tree"), &C11RScript::_ready);
+
+	ClassDB::bind_method(D_METHOD("set_debug_number"), &C11RScript::set_debug_number);
+	ClassDB::bind_method(D_METHOD("get_debug_number"), &C11RScript::get_debug_number);
+
+	{// debug number property data
+		PropertyInfo debug_number_info = PropertyInfo(Variant::INT, "debug_number");
+		ADD_PROPERTY(debug_number_info, "set_debug_number", "get_debug_number");
+	}
+}
+
+void C11RScript::_ready()
+{
+	print_line("C11RScript has hit the _enter_tree function! Hooray!");
+
+	C11RProperty prop_debug_number;
+	prop_debug_number.default_value = 0;
+	prop_debug_number.exported = true;
+	prop_debug_number.internal_id = 123;
+	prop_debug_number.property = PropertyInfo(Variant::INT, "debug_number");
+	properties.push_back(prop_debug_number);
+}
+
+void C11RScript::set_base_script(String &p_base_script)
+{
+	base_class = p_base_script;
 }
 
 void C11RScript::load(Ref<ConfigFile> p_config)
@@ -122,6 +149,18 @@ void C11RScript::internal_ready()
 	print_line("C11RScript - Ready");
 }
 
+void C11RScript::set_debug_number(int p_value)
+{
+	debug_number = p_value;
+}
+
+int C11RScript::get_debug_number()
+{
+	return debug_number;
+}
+
+
+
 // overrides
 bool C11RScript::can_instance() const {
 	return true;
@@ -173,32 +212,33 @@ ScriptInstance *C11RScript::instance_create(Object *p_this)
 		placeholders.insert(sins);
 
 		// TODO handle script export variables
-		// List<PropertyInfo> pinfo;
-		// Map<StringName, Variant> values;
+		List<PropertyInfo> pinfo;
+		Map<StringName, Variant> values;
 
-		// for (Map<StringName, Variable>::Element *E = variables.front(); E; E = E->next()) {
-		// 	if (!E->get()._export) {
-		// 		continue;
-		// 	}
+		for (List<C11RScript::C11RProperty>::Element *E = properties.front(); E; E = E->next()) {
+			if (!E->get().exported) {
+				continue;
+			}
 
-		// 	PropertyInfo p = E->get().info;
-		// 	p.name = String(E->key());
-		// 	pinfo.push_back(p);
-		// 	values[p.name] = E->get().default_value;
-		// }
+			PropertyInfo p = E->get().property;
+			p.name = String(E->get().property.name);
+			pinfo.push_back(p);
+			values[p.name] = E->get().default_value;
+		}
 
-		// sins->update(pinfo, values);
-
+		sins->update(pinfo, values);
 		return sins;
 	}
 #endif
 
-	C11RScriptInstance*instance = memnew(C11RScriptInstance);
+	C11RScriptInstance* instance = memnew(C11RScriptInstance);
 	instance->create(Ref<C11RScript>(this), p_this);
 
 	C11RScriptLanguage::singleton->lock.lock();
 	instances[p_this] = instance;
 	C11RScriptLanguage::singleton->lock.unlock();
+
+	instance->get_owner()->set_script_instance(instance);
 
 	return instance;
 }
@@ -227,6 +267,9 @@ Error C11RScript::reload(bool p_keep_state)
 
 bool C11RScript::has_method(const StringName &p_method) const 
 {
+	if (p_method == "_enter_tree") return true; // FIXME remove later
+	if (p_method == "custom_func") return true;
+
 	for(int i = 0; i < functions.size(); i++)
 	{
 		BlockFunction func = functions[i];
@@ -345,6 +388,8 @@ void C11RScript::get_script_property_list(List<PropertyInfo> *p_list) const
 		C11RProperty prop = properties[i];
 		p_list->push_back(prop.property);
 	}
+	p_list->push_back(PropertyInfo(Variant::INT, "debug_number"));// FIXME - remove later
+
 	// if (base.is_valid()) 
 	// {
 	// 	base->get_script_property_list(p_list);
@@ -377,8 +422,15 @@ bool C11RScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 	r_ret = value;
 	return true;
 }
+
 void C11RScriptInstance::get_property_list(List<PropertyInfo> *p_properties) const {
-	script->get_property_list(p_properties);
+	for (const List<C11RScript::C11RProperty>::Element *E = script->properties.front(); E; E = E->next()) {
+		if (!E->get().exported) {
+			continue;
+		}
+		p_properties->push_back(E->get().property);
+	}
+	script->get_property_list(p_properties); // TODO only add exported properties
 }
 
 Variant::Type C11RScriptInstance::get_property_type(const StringName &p_name, bool *r_is_valid) const {
@@ -389,6 +441,8 @@ void C11RScriptInstance::get_method_list(List<MethodInfo> *p_list) const {
 	script->get_method_list(p_list);
 }
 bool C11RScriptInstance::has_method(const StringName &p_method) const {
+	print_line(vformat("Checking if C11R instance has the method %s", p_method));
+
 	return script->has_method(p_method);
 }
 
@@ -397,6 +451,14 @@ Variant C11RScriptInstance::call(const StringName &p_method, const Variant **p_a
 	{
 		return script->call(p_method, p_args, p_argcount, r_error);
 	}
+
+	if(script->get_base_script().is_valid() && script->get_base_script()->has_method(p_method))
+	{
+		script->get_base_script()->call(p_method, p_args, p_argcount, r_error);
+	}
+
+	print_error(vformat("Script %s does not have method %s", script->class_name, p_method));
+	r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 	return Variant();
 }
 
@@ -449,6 +511,11 @@ Ref<Script> C11RScriptInstance::get_script() const {
 	return script;
 }
 
+Object* C11RScriptInstance::get_owner()
+{
+	return owner;
+}
+
 MultiplayerAPI::RPCMode C11RScriptInstance::get_rpc_mode(const StringName &p_method) const {
 	// TODO implement RPCMode assignments for functions
 	return MultiplayerAPI::RPC_MODE_DISABLED;
@@ -458,6 +525,7 @@ MultiplayerAPI::RPCMode C11RScriptInstance::get_rset_mode(const StringName &p_va
 	// TODO implement RSET assignments for properties/variables
 	return MultiplayerAPI::RPC_MODE_DISABLED;
 }
+
 ScriptLanguage *C11RScriptInstance::get_language() {
 	return C11RScriptLanguage::singleton;
 }
@@ -466,7 +534,29 @@ void C11RScriptInstance::create(Ref<C11RScript> p_script, Object * p_owner)
 {
 	script = p_script;
 	owner = p_owner;
+
 	// TODO Consume data from the script into the instance
+	// source = p_script->get_path(); // needed for handling breakpoints in functions (Debug mode only)
+
+	if (Object::cast_to<Node>(p_owner)) {
+		//turn on these if they exist and base is a node
+		Node *node = Object::cast_to<Node>(p_owner);
+		if (p_script->has_method("_process")) {
+			node->set_process(true);
+		}
+		if (p_script->has_method("_physics_process")) {
+			node->set_physics_process(true);
+		}
+		if (p_script->has_method("_input")) {
+			node->set_process_input(true);
+		}
+		if (p_script->has_method("_unhandled_input")) {
+			node->set_process_unhandled_input(true);
+		}
+		if (p_script->has_method("_unhandled_key_input")) {
+			node->set_process_unhandled_key_input(true);
+		}
+	}
 }
 
 

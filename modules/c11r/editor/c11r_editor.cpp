@@ -213,6 +213,11 @@ C11REditor::C11REditor()
                 option_class->add_item(classes[i], i);
             }
             vbox->add_child(option_class);
+            
+            Button* btn_ok = memnew(Button);
+            btn_ok->set_text("Accept & Apply");
+            vbox->add_child(btn_ok);
+            btn_ok->connect("pressed", this, "_base_class_selected");
         }
     }
 
@@ -340,6 +345,23 @@ void C11REditor::_popup_option_change_base_script(){
     popup_option_set_base_script->popup_centered_ratio(0.5f);
 }
 
+void C11REditor::_base_class_selected()
+{
+    popup_option_set_base_script->hide();
+    for(int i = 0; i < popup_option_set_base_script->get_child_count(); i++)
+    {
+        Node* child = popup_option_set_base_script->get_child(i);
+        OptionButton* btn = Object::cast_to<OptionButton>(child);
+        if (btn != nullptr)
+        {
+            int sel_index = btn->get_selected();
+            String base_script = btn->get_item_text(sel_index);
+            script->set_base_script(base_script);
+        }
+    }
+}
+
+
 
 static ScriptEditorBase *create_editor(const RES &p_resource) {
 	if (Object::cast_to<C11RScript>(*p_resource)) {
@@ -358,6 +380,7 @@ void C11REditor::_bind_methods(){
     ClassDB::bind_method(D_METHOD("_graph_gui_input"), &C11REditor::_graph_gui_input);
     ClassDB::bind_method(D_METHOD("_option_menu_item"), &C11REditor::_option_menu_item);
     ClassDB::bind_method(D_METHOD("_popup_option_change_base_script"), &C11REditor::_popup_option_change_base_script);
+    ClassDB::bind_method(D_METHOD("_base_class_selected"), &C11REditor::_base_class_selected);
 }
 
 void C11REditor::add_syntax_highlighter(SyntaxHighlighter *p_highlighter){}
@@ -397,7 +420,7 @@ Ref<Texture> C11REditor::get_icon(){
 
 bool C11REditor::is_unsaved()
 {
-    return false;
+    return true; // FIXME be a bit more dynamic yeah?
 }
 
 Variant C11REditor::get_edit_state(){

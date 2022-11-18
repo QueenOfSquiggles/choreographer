@@ -48,6 +48,7 @@ protected:
 	void _graph_gui_input(const Ref<InputEvent> &p_event);
 	void _option_menu_item(int index);
 	void _popup_option_change_base_script();
+	void _base_class_selected();
 
     static void _bind_methods();
 
