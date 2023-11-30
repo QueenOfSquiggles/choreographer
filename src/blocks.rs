@@ -1,0 +1,68 @@
+use godot::{engine, prelude::*};
+
+#[derive(GodotClass)]
+#[class(tool, base=Object)]
+pub struct Block {
+    call_get_inputs: Option<Callable>,
+    call_get_outputs: Option<Callable>,
+    call_tick: Option<Callable>,
+    #[base]
+    base: Base<Object>,
+}
+
+#[godot_api]
+impl IObject for Block {
+    fn init(base: Base<Object>) -> Self {
+        Self {
+            base,
+            call_get_inputs: None,
+            call_get_outputs: None,
+            call_tick: None,
+        }
+    }
+
+    fn to_string(&self) -> GString {
+        self.base.to_string().to_godot()
+    }
+
+    fn on_notification(&mut self, _what: engine::notify::ObjectNotification) {}
+}
+trait IBlock {
+    fn do_callable(func: &Option<Callable>, params: Array<Variant>) -> Option<Variant>;
+    fn get_inputs(&self) -> Option<Dictionary>;
+    fn get_outputs(&self) -> Option<Dictionary>;
+    fn tick(&self);
+}
+
+impl IBlock for Block {
+    fn do_callable(func: &Option<Callable>, params: Array<Variant>) -> Option<Variant> {
+        match func {
+            Some(call) => {
+                let result = call.callv(params);
+                if result.is_nil() {
+                    None
+                } else {
+                    Some(result)
+                }
+            }
+            None => None,
+        }
+    }
+    fn get_inputs(&self) -> Option<Dictionary> {
+        match Block::do_callable(&self.call_get_inputs, Array::new()) {
+            Some(var) => Some(Dictionary::from_variant(&var)),
+            None => None,
+        }
+    }
+
+    fn get_outputs(&self) -> Option<Dictionary> {
+        match Block::do_callable(&self.call_get_outputs, Array::new()) {
+            Some(var) => Some(Dictionary::from_variant(&var)),
+            None => None,
+        }
+    }
+
+    fn tick(&self) {
+        Block::do_callable(&self.call_tick, Array::new());
+    }
+}
