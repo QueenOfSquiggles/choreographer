@@ -1,3 +1,7 @@
+//
+//	ARCHIVED, not used for actual development anymore
+//
+
 use godot::{engine, prelude::*};
 
 #[derive(GodotClass)]

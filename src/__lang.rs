@@ -1,3 +1,7 @@
+//
+//	ARCHIVED, not used for actual development anymore
+//
+
 use crate::blocks::*;
 use godot::engine::{
     self, Engine, IScript, IScriptLanguageExtension, Script, ScriptLanguageExtension,
