@@ -6,7 +6,7 @@ use godot::prelude::*;
 
 pub fn init_lang() {
     let mut engine = Engine::singleton();
-    let lang: Gd<C11RLang> = Gd::new_default();
+    let lang = C11RLang::alloc_gd();
     engine.register_script_language(lang.upcast());
 }
 
@@ -17,7 +17,6 @@ pub fn deinit_lang() {
 #[derive(GodotClass)]
 #[class(tool, base=Script)]
 struct C11RScript {
-    // node_graph: DirectedCsrGraph<C11RBlock>,
     nodes: Vec<Gd<Block>>,
     #[base]
     base: Base<Script>,
@@ -30,7 +29,7 @@ impl IScript for C11RScript {
             base,
             nodes: Vec::new(),
         };
-        let block: Gd<Block> = Gd::new_default();
+        let block: Gd<Block> = Block::alloc_gd();
 
         temp.nodes.push(block);
         temp
@@ -154,7 +153,7 @@ impl IScriptLanguageExtension for C11RLang {
     }
 
     fn create_script(&self) -> Option<Gd<engine::Object>> {
-        let script: Gd<C11RScript> = Gd::new_default();
+        let script = C11RScript::new_gd();
         Some(script.upcast())
     }
 

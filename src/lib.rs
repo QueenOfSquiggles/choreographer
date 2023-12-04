@@ -1,36 +1,37 @@
 use godot::prelude::*;
 
-mod blocks;
-mod lang;
+// moving logic out of these limited files
+// mod blocks;
+// mod lang;
+pub mod editor;
+pub mod lang;
+pub mod scene;
+pub mod servers;
 
 struct Choreographer;
 
 #[gdextension]
 unsafe impl ExtensionLibrary for Choreographer {
-    // fn editor_run_behavior() -> godot::init::EditorRunBehavior {
-    //     godot::init::EditorRunBehavior::ToolClassesOnly
-    // }
-
-    // fn min_level() -> InitLevel {
-    //     InitLevel::Scene
-    // }
-
-    fn on_level_init(_level: InitLevel) {
-        match _level {
-            // available in runtime builds
-            InitLevel::Scene => lang::init_lang(),
-            // available only in editor builds (not during exported runtime)
-            // InitLevel::Editor => ,
+    fn on_level_init(level: InitLevel) {
+        match level {
+            InitLevel::Servers => servers::register(),
+            InitLevel::Scene => {
+                scene::register();
+                lang::register();
+            }
+            InitLevel::Editor => editor::register(),
             _ => (),
         }
     }
 
-    fn on_level_deinit(_level: InitLevel) {
-        match _level {
-            // available in runtime builds
-            InitLevel::Scene => lang::deinit_lang(),
-            // available only in editor builds (not during exported runtime)
-            // InitLevel::Editor => todo!(),
+    fn on_level_deinit(level: InitLevel) {
+        match level {
+            InitLevel::Servers => servers::unregister(),
+            InitLevel::Scene => {
+                scene::unregister();
+                lang::register();
+            }
+            InitLevel::Editor => editor::unregister(),
             _ => (),
         }
     }
@@ -38,11 +39,5 @@ unsafe impl ExtensionLibrary for Choreographer {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-
-    // #[test]
-    // fn it_works() {
-    //     let result = add(2, 2);
-    //     assert_eq!(result, 4);
-    // }
+    // TODO: figure out what kinds of things can be tested without godot? (I don't believe there's very much!)
 }

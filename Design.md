@@ -1,5 +1,9 @@
 # choreographer
 
+# This document is up for heavy revision! Take everything with a massive grain of salt as big as your fist!
+
+
+
 An addon for Godot 4 for visual scripting
 
 # Core Design Conceit
