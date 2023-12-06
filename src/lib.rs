@@ -29,7 +29,7 @@ unsafe impl ExtensionLibrary for Choreographer {
             InitLevel::Servers => servers::unregister(),
             InitLevel::Scene => {
                 scene::unregister();
-                lang::register();
+                lang::unregister();
             }
             InitLevel::Editor => editor::unregister(),
             _ => (),
