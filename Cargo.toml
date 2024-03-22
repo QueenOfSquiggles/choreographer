@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
+crate-type = ["cdylib"] # Compile this crate to a dynamic C library.
 
 [dependencies]
 # using rev against a very specific commit hash allows us to maintain stability through CI checks and build automation
-godot = { git = "https://github.com/godot-rust/gdext", rev = "e9dd718" }
+godot = { git = "https://github.com/godot-rust/gdext", rev = "fe5b02b", features = [
+	"experimental-threads",
+] }
 xml-rs = "0.8.19"

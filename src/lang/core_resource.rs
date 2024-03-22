@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use godot::engine::file_access::ModeFlags;
 use godot::engine::global::Error;
 use godot::engine::{
@@ -6,19 +8,19 @@ use godot::engine::{
 };
 use godot::prelude::*;
 
-use super::core_lang::ChoreographerScript;
+use crate::lang::core_lang::script::{BlockStore, ChoreographerScript, PortBind};
+use crate::scene::block_server::ChoreographerServer;
+use crate::scene::SINGLETON_C11R_SERVER;
 
 #[derive(GodotClass)]
 #[class(tool, base=ResourceFormatLoader)]
 pub struct ChoreographerLoader {
-    #[base]
     base: Base<ResourceFormatLoader>,
 }
 
 #[derive(GodotClass)]
 #[class(tool, base=ResourceFormatSaver)]
 pub struct ChoreographerSaver {
-    #[base]
     base: Base<ResourceFormatSaver>,
 }
 
@@ -82,9 +84,60 @@ impl IResourceFormatLoader for ChoreographerLoader {
         file.close();
 
         let data = rusty_parsing::parse_string(str_data, !Engine::singleton().is_editor_hint());
-        godot_print!("Found data {:?}", data);
+        godot_print!("Found data {:#?}", data);
+        // parse metadata into Godot data
+        let Some(server) = ChoreographerServer::singleton() else {
+            godot_error!(
+                "Failed to load {} server instance! This should never happen!",
+                SINGLETON_C11R_SERVER
+            );
+            return Variant::nil();
+        };
+        let mut script = ChoreographerScript::new_gd();
+        {
+            // local scope for sbind
+            let mut sbind = script.bind_mut();
+            sbind.class_name = Some(StringName::from(data.godot.class_name));
+            sbind.parent_class = Some(data.godot.parent_class.to_godot());
 
-        ChoreographerScript::new_gd().to_variant()
+            for _d in data.dependencies.iter() {
+                // TODO: how should dependencies be loaded? Are they even necessary at this level??
+            }
+            {
+                let mut block_ids: HashMap<usize, usize> = HashMap::new();
+                let mut block_index = 0usize;
+                for b in data.blocks.iter() {
+                    if let Some(block_instance) = server.bind().get_block(b.type_.clone()) {
+                        sbind.blocks.push(BlockStore {
+                            block: block_instance,
+                        });
+                        block_ids.insert(b.id, block_index);
+                        block_index += 1;
+                    } else {
+                        godot_warn!("Choreographer does not recognize block type \"{}\". Make sure you are registering this block!", b.type_);
+                    }
+                }
+                for c in data.connections.iter() {
+                    if block_ids.contains_key(&c.left_id) && block_ids.contains_key(&c.right_id) {
+                        sbind.port_binds.push(PortBind {
+                            input: false,
+                            block_index: block_ids.get(&c.left_id).unwrap().to_owned(),
+                            port_index: c.left_port,
+                        });
+                        sbind.port_binds.push(PortBind {
+                            input: true,
+                            block_index: block_ids.get(&c.right_id).unwrap().to_owned(),
+                            port_index: c.right_port,
+                        });
+                    } else {
+                        godot_warn!("Failed to bind connection : {:?}", c);
+                    }
+                }
+            }
+            sbind.construct_data();
+        }
+        print!("Script Data: {:#?}", script.bind());
+        script.to_variant()
     }
 }
 
@@ -141,60 +194,63 @@ mod rusty_parsing {
 
     #[derive(Debug, Clone, Default)]
     pub struct GodotMetaData {
-        uid: i64,
+        pub uid: i64,
+        pub class_name: String,
+        pub parent_class: String,
     }
     #[derive(Debug, Clone, Default)]
     pub struct GodotResourceDep {
-        uid: i64,
-        path: String,
+        pub uid: i64,
+        pub path: String,
     }
     #[derive(Debug, Clone, Default)]
     pub struct GodotVar {
-        type_: i32,
-        name: String,
-        value: String,
-        isconst: bool,
+        pub type_: i32,
+        pub name: String,
+        pub value: String,
+        pub isconst: bool,
+        pub isexport: bool,
     }
     #[derive(Debug, Clone, Default)]
     pub struct Block {
-        id: i64,
-        type_: String,
-        extra_data: HashMap<String, String>,
+        pub id: usize,
+        pub type_: String,
+        pub extra_data: HashMap<String, String>,
     }
     #[derive(Debug, Clone, Default)]
     pub struct Connection {
-        left_id: i32,
-        left_port: i32,
-        right_id: i32,
-        right_port: i32,
+        pub left_id: usize,
+        pub left_port: usize,
+        pub right_id: usize,
+        pub right_port: usize,
     }
     #[derive(Debug, Clone, Default)]
     pub struct DocString {
-        id: i64,
-        docstring: String,
+        pub id: i64,
+        pub docstring: String,
     }
     #[derive(Debug, Clone, Default)]
     pub struct EditorMeta {
-        id: i64,
-        position: (f32, f32),
+        pub id: i64,
+        pub position: (f32, f32),
     }
 
     #[derive(Debug, Clone, Default)]
     pub struct Comment {
-        id: i64,
-        position: (f32, f32),
-        text: String,
+        pub id: i64,
+        pub position: (f32, f32),
+        pub text: String,
     }
     #[derive(Debug, Clone, Default)]
     pub struct GodotScriptData {
-        godot: GodotMetaData,
-        dependencies: Vec<GodotResourceDep>,
-        vars: Vec<GodotVar>,
-        blocks: Vec<Block>,
-        connections: Vec<Connection>,
-        docs: Vec<DocString>,
-        gui: Vec<EditorMeta>,
-        comments: Vec<Comment>,
+        pub godot: GodotMetaData,
+        pub dependencies: Vec<GodotResourceDep>,
+        pub vars: Vec<GodotVar>,
+        pub blocks: Vec<Block>,
+        pub connections: Vec<Connection>,
+        pub docs: Vec<DocString>,
+        pub gui: Vec<EditorMeta>,
+        pub comments: Vec<Comment>,
     }
 
     pub fn parse_string(data: String, skip_meta: bool) -> GodotScriptData {
@@ -288,14 +344,23 @@ mod rusty_parsing {
                 continue;
             }
             let mut uid = 0i64;
+            let mut class_name = String::new();
+            let mut parent_class = String::new();
             for a in attributes {
-                if a.name.to_string() == "uid" {
-                    if let Ok(id) = a.value.to_string().parse::<i64>() {
-                        uid = id;
+                match a.name.to_string().as_str() {
+                    "uid" => {
+                        if let Ok(id) = a.value.to_string().parse::<i64>() {
+                            uid = id;
+                        }
                     }
+                    "class" => class_name = a.value.to_string(),
+                    "extends" => parent_class = a.value.to_string(),
+                    _ => (),
                 }
             }
             data.godot.uid = uid;
+            data.godot.class_name = class_name;
+            data.godot.parent_class = parent_class;
         }
     }
 
@@ -346,6 +411,7 @@ mod rusty_parsing {
             let mut name = String::new();
             let mut value = String::new();
             let mut isconst = false;
+            let mut isexport: bool = false;
             for a in attributes {
                 match a.name.to_string().as_str() {
                     "type" => {
@@ -360,6 +426,12 @@ mod rusty_parsing {
                             isconst = value;
                         }
                     }
+                    "isexport" => {
+                        if let Ok(value) = a.value.parse::<bool>() {
+                            isexport = value;
+                        }
+                    }
+
                     _ => (),
                 }
             }
@@ -368,6 +440,7 @@ mod rusty_parsing {
                 name,
                 value,
                 isconst,
+                isexport,
             });
         }
     }
@@ -385,13 +458,13 @@ mod rusty_parsing {
                 continue;
             }
             let mut type_ = String::new();
-            let mut id = 0i64;
+            let mut id = 0usize;
             let mut extra_data = HashMap::new();
             for a in attributes {
                 match a.name.to_string().as_str() {
                     "type" => type_ = a.value.to_string(),
                     "id" => {
-                        if let Ok(value) = a.value.parse::<i64>() {
+                        if let Ok(value) = a.value.parse::<usize>() {
                             id = value;
                         }
                     }
@@ -422,13 +495,13 @@ mod rusty_parsing {
                 continue;
             }
             let mut conn = Connection {
-                left_id: -1,
-                left_port: -1,
-                right_id: -1,
-                right_port: -1,
+                left_id: 0,
+                left_port: 0,
+                right_id: 0,
+                right_port: 0,
             };
             for a in attributes {
-                if let Ok(value) = a.value.parse::<i32>() {
+                if let Ok(value) = a.value.parse::<usize>() {
                     match a.name.to_string().as_str() {
                         "left_id" => conn.left_id = value,
                         "left_port" => conn.left_port = value,
@@ -556,10 +629,13 @@ mod rusty_parsing {
 
         #[test]
         fn godot_meta() {
-            let test_data = "<c11r><godot uid=\"001\"></godot></c11r>";
+            let test_data =
+                "<c11r><godot uid=\"001\" class=\"SomeClass\" extends=\"Node\"></godot></c11r>";
             let meta = super::parse_string(test_data.to_owned(), false);
             println!("Test data found: {:?}", meta.godot);
             assert_eq!(meta.godot.uid, 1i64);
+            assert_eq!(meta.godot.class_name, "SomeClass");
+            assert_eq!(meta.godot.parent_class, "Node");
         }
 
         #[test]
@@ -584,10 +660,10 @@ mod rusty_parsing {
         fn vars() {
             let data = String::from(
                 "<c11r><vars>
-					<item type=\"0\" name=\"some\" value=\"A\" isconst=\"true\"></item>
-					<item type=\"1\" name=\"foo\" value=\"false\" isconst=\"false\"></item>
+					<item type=\"0\" name=\"some\" value=\"A\" isconst=\"true\" isexport=\"true\"></item>
+					<item type=\"1\" name=\"foo\" value=\"false\" isconst=\"false\" isexport=\"false\"></item>
 					<item type=\"2\" name=\"bar\" value=\"35.5\" isconst=\"true\"></item>
-					<item type=\"3\" name=\"other\" value=\"nil\" isconst=\"false\"/>
+					<item type=\"3\" name=\"other\" value=\"nil\" isconst=\"false\" isexport=\"true\"/>
 				</vars></c11r>
 				",
             );
@@ -617,6 +693,11 @@ mod rusty_parsing {
             assert_eq!(meta.vars[1].isconst, false);
             assert_eq!(meta.vars[2].isconst, true);
             assert_eq!(meta.vars[3].isconst, false);
+            // exports
+            assert_eq!(meta.vars[0].isexport, true);
+            assert_eq!(meta.vars[1].isexport, false);
+            assert_eq!(meta.vars[2].isexport, false);
+            assert_eq!(meta.vars[3].isexport, true);
         }
 
         #[test]

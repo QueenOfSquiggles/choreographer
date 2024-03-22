@@ -1,23 +1,16 @@
 use godot::{
-    engine::{
-        file_access::ModeFlags, global::Error, Engine, FileAccess, IScriptExtension,
-        IScriptLanguageExtension, Script, ScriptExtension, ScriptLanguage, ScriptLanguageExtension,
-    },
+    engine::{global::Error, Engine, IScriptLanguageExtension, Script, ScriptLanguageExtension},
     prelude::*,
 };
+
+use crate::common;
+
+use super::script::ChoreographerScript;
 
 #[derive(GodotClass)]
 #[class(tool, base=ScriptLanguageExtension)]
 pub struct ChoreographerLang {
-    #[base]
     base: Base<ScriptLanguageExtension>,
-}
-
-#[derive(GodotClass)]
-#[class(tool, base=ScriptExtension)]
-pub struct ChoreographerScript {
-    #[base]
-    base: Base<ScriptExtension>,
 }
 
 impl ChoreographerLang {
@@ -42,7 +35,7 @@ impl IScriptLanguageExtension for ChoreographerLang {
     }
 
     fn get_name(&self) -> GString {
-        GString::from("Choreographer")
+        GString::from(common::PLUGIN_NAME)
     }
 
     fn init_ext(&mut self) {}
@@ -76,7 +69,6 @@ impl IScriptLanguageExtension for ChoreographerLang {
     fn get_string_delimiters(&self) -> PackedStringArray {
         PackedStringArray::new()
     }
-
     fn make_template(
         &self,
         _template: GString,
@@ -98,7 +90,7 @@ impl IScriptLanguageExtension for ChoreographerLang {
     }
 
     fn is_using_templates(&mut self) -> bool {
-        true
+        false // TODO implement
     }
 
     fn validate(
@@ -151,11 +143,12 @@ impl IScriptLanguageExtension for ChoreographerLang {
     }
 
     fn open_in_external_editor(&mut self, _script: Gd<Script>, _line: i32, _column: i32) -> Error {
+        // TODO: maybe here is where we implement opening within the editor??
         Error::OK
     }
 
     fn overrides_external_editor(&mut self) -> bool {
-        false
+        true
     }
 
     fn complete_code(&self, _code: GString, _path: GString, _owner: Gd<Object>) -> Dictionary {
@@ -291,150 +284,4 @@ impl IScriptLanguageExtension for ChoreographerLang {
     fn get_global_class_name(&self, _path: GString) -> Dictionary {
         Dictionary::new()
     }
-}
-
-#[godot_api]
-impl IScriptExtension for ChoreographerScript {
-    fn init(base: Base<Self::Base>) -> Self {
-        Self { base }
-    }
-
-    fn editor_can_reload_from_file(&mut self) -> bool {
-        true
-    }
-
-    unsafe fn placeholder_erased(&mut self, _placeholder: *mut std::ffi::c_void) {}
-
-    fn can_instantiate(&self) -> bool {
-        true
-    }
-
-    fn get_base_script(&self) -> Option<Gd<Script>> {
-        None
-    }
-
-    fn get_global_name(&self) -> StringName {
-        StringName::from("")
-    }
-
-    fn inherits_script(&self, _script: Gd<Script>) -> bool {
-        false
-    }
-
-    fn get_instance_base_type(&self) -> StringName {
-        StringName::from("")
-    }
-
-    unsafe fn instance_create(&self, _for_object: Gd<Object>) -> *mut std::ffi::c_void {
-        std::ptr::null_mut::<std::ffi::c_void>()
-    }
-
-    unsafe fn placeholder_instance_create(&self, _for_object: Gd<Object>) -> *mut std::ffi::c_void {
-        std::ptr::null_mut::<std::ffi::c_void>()
-    }
-
-    fn instance_has(&self, _object: Gd<Object>) -> bool {
-        false
-    }
-
-    fn has_source_code(&self) -> bool {
-        true
-    }
-
-    fn get_source_code(&self) -> GString {
-        if let Some(file) = FileAccess::open(self.base.get_path(), ModeFlags::READ) {
-            file.get_as_text()
-        } else {
-            GString::from("")
-        }
-    }
-
-    fn set_source_code(&mut self, _code: GString) {}
-
-    fn reload(&mut self, _keep_state: bool) -> Error {
-        Error::OK
-    }
-
-    fn get_documentation(&self) -> Array<Dictionary> {
-        Array::new()
-    }
-
-    fn get_class_icon_path(&self) -> GString {
-        GString::new()
-    }
-    fn has_method(&self, _method: StringName) -> bool {
-        false
-    }
-
-    fn has_static_method(&self, _method: StringName) -> bool {
-        false
-    }
-
-    fn get_method_info(&self, _method: StringName) -> Dictionary {
-        Dictionary::new()
-    }
-
-    fn is_tool(&self) -> bool {
-        false
-    }
-
-    fn is_valid(&self) -> bool {
-        true
-    }
-
-    fn is_abstract(&self) -> bool {
-        false
-    }
-
-    fn get_language(&self) -> Option<Gd<ScriptLanguage>> {
-        ChoreographerLang::singleton().map(|lang| lang.upcast())
-    }
-
-    fn has_script_signal(&self, _signal: StringName) -> bool {
-        false
-    }
-
-    fn get_script_signal_list(&self) -> Array<Dictionary> {
-        Array::new()
-    }
-
-    fn has_property_default_value(&self, _property: StringName) -> bool {
-        false
-    }
-
-    fn get_property_default_value(&self, _property: StringName) -> Variant {
-        Variant::nil()
-    }
-
-    fn update_exports(&mut self) {}
-
-    fn get_script_method_list(&self) -> Array<Dictionary> {
-        Array::new()
-    }
-
-    fn get_script_property_list(&self) -> Array<Dictionary> {
-        Array::new()
-    }
-
-    fn get_member_line(&self, _member: StringName) -> i32 {
-        0
-    }
-
-    fn get_constants(&self) -> Dictionary {
-        Dictionary::new()
-    }
-
-    fn get_members(&self) -> Array<StringName> {
-        Array::new()
-    }
-
-    fn is_placeholder_fallback_enabled(&self) -> bool {
-        false
-    }
-
-    fn get_rpc_config(&self) -> Variant {
-        Variant::nil()
-    }
-
-    fn setup_local_to_scene(&mut self) {}
 }

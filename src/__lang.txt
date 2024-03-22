@@ -15,14 +15,14 @@ pub fn init_lang() {
 }
 
 pub fn deinit_lang() {
-    //TODO: is anything needed for this?? The extension cannot be disabled with removing the files from the project, and the next time the engine is initialized, it will simply not initialize anything. I'll leave this in here just in case.
+    // is anything needed for this?? The extension cannot be disabled with removing the files from the project, and the next time the engine is initialized, it will simply not initialize anything. I'll leave this in here just in case.
 }
 
 #[derive(GodotClass)]
 #[class(tool, base=Script)]
 struct C11RScript {
     nodes: Vec<Gd<Block>>,
-    #[base]
+    
     base: Base<Script>,
 }
 
@@ -52,7 +52,7 @@ struct C11RLang {
     script_name: GString,
     file_ext: GString,
     file_ext_arr: PackedStringArray,
-    #[base]
+    
     base: Base<ScriptLanguageExtension>,
 }
 

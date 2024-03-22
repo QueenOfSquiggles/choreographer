@@ -10,7 +10,7 @@ pub struct Block {
     call_get_inputs: Option<Callable>,
     call_get_outputs: Option<Callable>,
     call_tick: Option<Callable>,
-    #[base]
+    
     base: Base<Object>,
 }
 
