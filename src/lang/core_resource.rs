@@ -136,7 +136,7 @@ impl IResourceFormatLoader for ChoreographerLoader {
             }
             sbind.construct_data();
         }
-        print!("Script Data: {:#?}", script.bind());
+        // print!("Script Data: {:#?}", script.bind());
         script.to_variant()
     }
 }

@@ -41,7 +41,7 @@ impl IScriptLanguageExtension for ChoreographerLang {
     fn init_ext(&mut self) {}
 
     fn get_type(&self) -> GString {
-        GString::from("Choreographer")
+        GString::from(common::PLUGIN_NAME)
     }
 
     fn get_extension(&self) -> GString {
@@ -142,8 +142,9 @@ impl IScriptLanguageExtension for ChoreographerLang {
         GString::from("")
     }
 
-    fn open_in_external_editor(&mut self, _script: Gd<Script>, _line: i32, _column: i32) -> Error {
+    fn open_in_external_editor(&mut self, script: Gd<Script>, _line: i32, _column: i32) -> Error {
         // TODO: maybe here is where we implement opening within the editor??
+        godot_print!("Opening script in external editor: {}", script.get_name());
         Error::OK
     }
 

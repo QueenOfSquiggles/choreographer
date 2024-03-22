@@ -103,6 +103,7 @@ impl IScriptExtension for ChoreographerScript {
     }
 
     unsafe fn instance_create(&self, _for_object: Gd<Object>) -> *mut std::ffi::c_void {
+        // TODO what kind of data is actually supposed to be passed here?
         std::ptr::null_mut::<std::ffi::c_void>()
     }
 
@@ -129,7 +130,7 @@ impl IScriptExtension for ChoreographerScript {
     }
 
     fn get_documentation(&self) -> Array<Dictionary> {
-        Array::new()
+        Array::new() // TODO what is the data format here?
     }
 
     fn get_class_icon_path(&self) -> GString {
