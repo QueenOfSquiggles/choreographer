@@ -1,9 +1,0 @@
-[*] 2024-11-10 12:07:25.250787369 -06:00 === DUMPING ENVIRONMENT ===
-[*] 2024-11-10 12:07:25.251116117 -06:00 Environment { flags: [StringName("CHO_DUMP_ENV")], registry: TypeRegistry { types: {Namespace(StringName("std")): {TypeName(StringName("print")): Basic(BasicNode { name: @std.print, inputs: {}, outputs: {} })}, Namespace(StringName("std.math")): {TypeName(StringName("multiply")): Basic(BasicNode { name: @std.math.multiply, inputs: {"a": Num(0.0), "b": Num(0.0)}, outputs: {"c": Num(0.0)} }), TypeName(StringName("subtract")): Basic(BasicNode { name: @std.math.subtract, inputs: {"b": Num(0.0), "a": Num(0.0)}, outputs: {"c": Num(0.0)} }), TypeName(StringName("divide")): Basic(BasicNode { name: @std.math.divide, inputs: {"b": Num(0.0), "a": Num(0.0)}, outputs: {"c": Num(0.0)} }), TypeName(StringName("add")): Basic(BasicNode { name: @std.math.add, inputs: {"b": Num(0.0), "a": Num(0.0)}, outputs: {"c": Num(0.0)} })}} }, logger: Logger { file: "choreoghrapher.log" } }
-[*] 2024-11-10 12:07:25.251187653 -06:00 === END DUMP ===
-[*] 2024-11-10 12:07:25.251247365 -06:00 Exited successfully with dangling frame data
-[*] 2024-11-10 12:07:25.251307636 -06:00 {
-    StringName("c"): Num(
-        8.0,
-    ),
-}
