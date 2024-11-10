@@ -1,0 +1,7 @@
+(
+    entry: "std.math.add",
+    start_frame_data: { 
+        "a": Num(5.0),
+        "b": Num(3.0)
+    },
+)

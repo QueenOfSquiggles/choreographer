@@ -1,0 +1,6 @@
+[workspace]
+
+resolver = "2"
+
+members = ["cho-lib", "cho-runtime", "cho-cdylib"]
+default-members = ["cho-runtime"]
