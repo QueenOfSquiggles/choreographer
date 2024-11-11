@@ -1,6 +1,6 @@
 use cho_lib::{
     construct_environment,
-    types::{GlobalName, NodeData},
+    types::{GlobalName, NamespacedType},
 };
 use clap::Parser;
 use exec::Execution;

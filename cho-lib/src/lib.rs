@@ -1,18 +1,23 @@
 use std::env;
 
 use logger::Logger;
+use nodes::Node;
+use scripts::Script;
 use types::{StringName, TypeRegistry};
 
 #[cfg(feature = "stdlib")]
 pub mod stdlib;
 
 pub mod logger;
+pub mod nodes;
+pub mod scripts;
 pub mod types;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub flags: Vec<StringName>,
-    pub registry: TypeRegistry,
+    pub nodes: TypeRegistry<Node>,
+    pub scripts: TypeRegistry<Script>,
     pub logger: Logger,
 }
 
@@ -24,7 +29,8 @@ pub fn construct_environment() -> Environment {
     }
     let mut cho_env = Environment {
         flags: Vec::new(),
-        registry: TypeRegistry::default(),
+        nodes: TypeRegistry::default(),
+        scripts: TypeRegistry::default(),
         logger: Logger::new("choreoghrapher.log".into()),
     };
     for (key, value) in env::vars() {
@@ -33,7 +39,7 @@ pub fn construct_environment() -> Environment {
         }
     }
     if cfg!(feature = "stdlib") {
-        stdlib::register(&mut cho_env.registry);
+        stdlib::register(&mut cho_env.nodes);
     }
     cho_env
 }

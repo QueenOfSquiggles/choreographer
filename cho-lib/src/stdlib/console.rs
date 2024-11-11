@@ -1,13 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    types::{BasicNodeLogic, GlobalName, NodeError, StringName, TypeRegistry, Var},
+    nodes::{BasicNodeLogic, Node, NodeError},
+    types::{GlobalName, StringName, TypeRegistry, Var},
     Environment,
 };
 
 use super::{add_basic, get_var_string};
 
-pub fn register(registry: &mut TypeRegistry) {
+pub fn register(registry: &mut TypeRegistry<Node>) {
     add_basic(
         registry,
         GlobalName::from_path("std.print"),

@@ -1,7 +1,8 @@
 use std::{collections::HashMap, fs::File, sync::Arc};
 
 use cho_lib::{
-    types::{GlobalName, Node, NodeData, NodeError, StringName, Var},
+    nodes::{Node, NodeData, NodeError},
+    types::{GlobalName, StringName, Var},
     Environment,
 };
 use serde::{Deserialize, Serialize};
@@ -40,7 +41,7 @@ impl Execution {
     }
 
     pub fn run(&mut self) -> Result<HashMap<StringName, Var>, (NodeError, Vec<Arc<Node>>)> {
-        let Some(entry) = self.env.registry.get(&self.entry) else {
+        let Some(entry) = self.env.nodes.get(&self.entry) else {
             return Err((NodeError::TypeNotFound {
                 name: self.entry.clone(),
                 msg: "Failed to load entry type. Make sure your entry point name matches the name that is being called by the runtime."

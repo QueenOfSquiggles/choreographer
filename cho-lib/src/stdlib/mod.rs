@@ -1,20 +1,23 @@
 #![allow(unused)] // probably bad but I hate the warning and it'll take time to build the stdlib
 use std::collections::HashMap;
 
-use crate::types::{
-    BasicNode, BasicNodeLogic, GlobalName, Node, NodeError, StringName, TypeRegistry, Var,
+use crate::{
+    nodes::{BasicNode, BasicNodeLogic, Node, NodeError},
+    types::{GlobalName, StringName, TypeRegistry, Var},
 };
 
 pub mod console;
 pub mod math;
+pub mod vars;
 
-pub fn register(registry: &mut TypeRegistry) {
+pub fn register(registry: &mut TypeRegistry<Node>) {
     console::register(registry);
     math::register(registry);
+    vars::register(registry);
 }
 
 fn add_basic(
-    reg: &mut TypeRegistry,
+    reg: &mut TypeRegistry<Node>,
     name: GlobalName,
     inputs: impl IntoIterator<Item = (&'static str, Var)>,
     outputs: impl IntoIterator<Item = (&'static str, Var)>,
