@@ -22,6 +22,7 @@ pub struct Function {
     nodes: Vec<Arc<Node>>,
     entry: usize,
     routing: Vec<Connection>,
+    // TODO: maybe it's better to cache outputs from each node in the function and dynamically call back nodes that don't have an execution path so long as their outputs are connected. Ideally the caching is scrapped after execution, but maybe a flag to keep it (faster exec, more memory consumption) could be nice
 }
 
 #[derive(Debug, Clone)]
