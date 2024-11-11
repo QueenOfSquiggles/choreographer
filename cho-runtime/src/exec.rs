@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use cho_lib::{
     nodes::{Node, NodeData, NodeError},
@@ -7,36 +7,32 @@ use cho_lib::{
 };
 use serde::{Deserialize, Serialize};
 
-pub const CONFIG_FILE: &'static str = "choreo.ron";
+use crate::project::ProjectFile;
 
 pub struct Execution {
     env: Environment,
     entry: GlobalName,
     call_stack: Vec<Arc<Node>>,
-    config: ExecutableConfig,
+    config: ProjectFile,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExecutableConfig {
     entry: String,
     start_frame_data: HashMap<String, Var>,
 }
 
 impl Execution {
-    pub fn new(env: Environment, entry: GlobalName) -> Self {
-        let config: ExecutableConfig = match File::open(CONFIG_FILE) {
-            Ok(file) => ron::de::from_reader::<_, ExecutableConfig>(file).unwrap_or_default(),
-            Err(_) => ExecutableConfig::default(),
-        };
+    pub fn new(env: Environment, entry: GlobalName, config: &ProjectFile) -> Self {
         Self {
             env,
             entry: if entry.is_empty() {
-                GlobalName::from_path(config.clone().entry)
+                GlobalName::from_path(config.executable.clone().unwrap_or_default().entry)
             } else {
                 entry
             },
             call_stack: Default::default(),
-            config,
+            config: config.clone(),
         }
     }
 
@@ -52,8 +48,10 @@ impl Execution {
 
         let aenv = Arc::new(self.env.clone());
         let mut frame_data = HashMap::<StringName, Var>::new();
-        for (k, v) in &self.config.start_frame_data {
-            frame_data.insert(k.clone().into(), v.clone());
+        if let Some(exec_data) = &self.config.executable {
+            for (k, v) in &exec_data.start_frame_data {
+                frame_data.insert(k.clone().into(), v.clone());
+            }
         }
 
         while !self.call_stack.is_empty() {
@@ -70,5 +68,19 @@ impl Execution {
         }
 
         Ok(frame_data)
+    }
+}
+
+impl Default for ExecutableConfig {
+    fn default() -> Self {
+        let mut frame = HashMap::new();
+        frame.insert("a".into(), Var::Bool(true));
+        frame.insert("b".into(), Var::String("A string".into()));
+        frame.insert("c".into(), Var::Num(3.1415));
+
+        Self {
+            entry: "main".into(),
+            start_frame_data: frame,
+        }
     }
 }

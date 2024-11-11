@@ -11,7 +11,6 @@ use crate::{
 use super::{add_basic, get_var_number, get_var_string};
 
 pub fn register(registry: &mut TypeRegistry<Node>) {
-    todo!();
     add_basic(
         registry,
         GlobalName::from_path("std.vars.value"),

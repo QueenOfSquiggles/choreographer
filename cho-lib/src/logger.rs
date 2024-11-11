@@ -1,8 +1,4 @@
-use std::{
-    fs::{File, OpenOptions},
-    io::Write,
-    path::PathBuf,
-};
+use std::{fs::OpenOptions, io::Write, path::PathBuf};
 
 use chrono::Local;
 use log::{debug, error, info, trace, warn};
@@ -14,10 +10,14 @@ pub struct Logger {
 
 impl Logger {
     pub fn new(file: PathBuf) -> Self {
-        if let Ok(mut fout) = File::create(file.clone()) {
-            // purges old data from last logging session
-            if let Err(e) = fout.write("".as_bytes()) {
-                eprintln!("Failed to clear previous file {} :: {}", file.display(), e);
+        #[cfg(not(test))]
+        {
+            use std::fs::File;
+            if let Ok(mut fout) = File::create(file.clone()) {
+                // purges old data from last logging session
+                if let Err(e) = fout.write("".as_bytes()) {
+                    eprintln!("Failed to clear previous file {} :: {}", file.display(), e);
+                }
             }
         }
         Self { file }
@@ -50,6 +50,9 @@ impl Logger {
     }
 
     fn emit_to_file(&self, msg: &String) {
+        if cfg!(test) {
+            return;
+        }
         let Ok(mut file) = OpenOptions::new()
             .write(true)
             .append(true)

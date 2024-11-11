@@ -1,7 +1,20 @@
 (
-    entry: "std.math.add",
-    start_frame_data: { 
-        "a": Num(5.0),
-        "b": Num(3.0)
-    },
+    meta: (
+        name: "project",
+        version: "0.1.0",
+        authors: [
+            "your name here <youremail@provider>",
+        ],
+        description: "a project",
+        source: "https://your.vcs/homepage",
+        license: "MIT + Apache 2.0",
+    ),
+    executable: Some((
+        entry: "main",
+        start_frame_data: {
+            "c": Num(3.1415),
+            "a": Bool(true),
+            "b": String("A string"),
+        },
+    )),
 )

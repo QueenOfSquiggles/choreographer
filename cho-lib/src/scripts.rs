@@ -83,7 +83,7 @@ impl Script {
             }
         }
 
-        Ok(HashMap::new())
+        Ok(self.blackboard.clone())
     }
 
     fn execute_frame(
@@ -140,11 +140,7 @@ impl Script {
 
 #[cfg(test)]
 mod test {
-    use std::{
-        collections::{hash_map, HashMap},
-        hash::Hash,
-        sync::Arc,
-    };
+    use std::{collections::HashMap, sync::Arc};
 
     use crate::types::{GlobalName, Var};
 
@@ -167,19 +163,37 @@ mod test {
         script.funcs.insert(
             "func".into(),
             Function {
-                nodes: vec![],
+                nodes: vec![
+                    env.nodes
+                        .get(&GlobalName::from_path("std.math.add"))
+                        .unwrap(),
+                    env.nodes
+                        .get(&GlobalName::from_path("std.math.subtract"))
+                        .unwrap(),
+                    env.nodes
+                        .get(&GlobalName::from_path("std.math.add"))
+                        .unwrap(),
+                ],
                 entry: 0,
-                routing: vec![Connection {
-                    value: Var::Null,
-                    from: 0,
-                    to: 1,
-                    from_param: "c".into(),
-                    to_param: "a".into(),
-                }],
+                routing: vec![
+                //     Connection {
+                //     value: Var::Null,
+                //     from: 0,
+                //     to: 1,
+                //     from_param: "c".into(),
+                //     to_param: "a".into(),
+                // }
+                ],
             },
         );
         let mut stack = Vec::new();
-        let result = script.call_func("func".into(), Arc::new(env), HashMap::new(), &mut stack);
-        // TODO run assertions for testing purposes
+        let mut inputs = HashMap::new();
+        inputs.insert("a".into(), Var::Num(3.0));
+        inputs.insert("b".into(), Var::Num(4.0));
+        let result = script.call_func("func".into(), Arc::new(env), inputs, &mut stack);
+        eprintln!("{:?}", result);
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        assert_eq!(output.get(&"c".into()).cloned(), Some(Var::Num(7.0)));
     }
 }
