@@ -72,6 +72,13 @@ impl<T: NamespacedType + Clone> TypeRegistry<T> {
             .cloned()
             .and_then(|map| map.get(&name.1).cloned())
     }
+
+    pub fn contains(&self, name: &GlobalName) -> bool {
+        let Some(namespaced) = self.types.get(&name.0) else {
+            return false;
+        };
+        namespaced.contains_key(&name.1)
+    }
 }
 
 impl From<&'static str> for StringName {

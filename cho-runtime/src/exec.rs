@@ -1,7 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fs::File, path::PathBuf, sync::Arc};
 
 use cho_lib::{
-    nodes::{Node, NodeData, NodeError},
+    filetype::ScriptProto,
+    nodes::{Node, NodeData, NodeError, ScriptNode},
     types::{GlobalName, Var, VarRegisters},
     Environment,
 };
@@ -37,6 +38,15 @@ impl Execution {
     }
 
     pub fn run(&mut self) -> Result<VarRegisters, (NodeError, Vec<Arc<Node>>)> {
+        if !self.env.nodes.contains(&self.entry) {
+            let target = self.entry.clone();
+            if let Some(script) = self.try_get_script_for(&target) {
+                self.env
+                    .logger
+                    .debug(format!("Loading script for name: {:?}", target));
+                self.env.nodes.register(Node::Script(script));
+            }
+        }
         let Some(entry) = self.env.nodes.get(&self.entry) else {
             return Err((NodeError::TypeNotFound {
                 name: self.entry.clone(),
@@ -68,6 +78,34 @@ impl Execution {
         }
 
         Ok(frame_data)
+    }
+
+    fn try_get_script_for(&mut self, name: &GlobalName) -> Option<ScriptNode> {
+        let mut fpath = PathBuf::new();
+        for element in name.to_path().split('.') {
+            fpath.push(element);
+        }
+        fpath.set_extension("cho");
+        if !fpath.exists() {
+            return None;
+        }
+        let Ok(file) = File::open(fpath) else {
+            return None;
+        };
+        let Ok(proto) = ron::de::from_reader::<_, ScriptProto>(file) else {
+            return None;
+        };
+
+        self.env.scripts.register(proto.to_script(&self.env.nodes));
+
+        match self.env.scripts.get(name) {
+            Some(script) => Some(ScriptNode {
+                name: name.clone(),
+                func: "main".into(),
+                script,
+            }),
+            None => None,
+        }
     }
 }
 

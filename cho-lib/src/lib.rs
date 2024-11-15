@@ -8,6 +8,7 @@ use types::{StringName, TypeRegistry};
 #[cfg(feature = "stdlib")]
 pub mod stdlib;
 
+pub mod filetype;
 pub mod logger;
 pub mod nodes;
 pub mod scripts;

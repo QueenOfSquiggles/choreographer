@@ -16,13 +16,16 @@ struct CliData {
     command: Option<Commands>,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Commands {
     Run {
         entry: Option<String>,
 
         #[arg(short, long)]
         dump_env: bool,
+
+        #[arg(long)]
+        verbose: bool,
     },
     New {
         path: Option<String>,
@@ -42,8 +45,19 @@ fn main() {
             .warn("No commands provided. Refer to the help page for available commands");
         return;
     };
+    env.logger
+        .debug(format!("Processing choreographer command: {:#?}", cmd));
     match cmd {
-        Commands::Run { entry, dump_env } => cmd_run(env, entry, dump_env),
+        Commands::Run {
+            entry,
+            dump_env,
+            verbose,
+        } => {
+            if verbose {
+                log::set_max_level(log::LevelFilter::Debug);
+            }
+            cmd_run(env, entry, dump_env)
+        }
         Commands::New { path, lib } => cmd_new(env, path, lib),
     }
 }

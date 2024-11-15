@@ -138,6 +138,8 @@ version = "0.1.0"
 dependencies = [
  "cho-lib",
  "clap",
+ "colog",
+ "log",
  "ron",
  "serde",
 ]

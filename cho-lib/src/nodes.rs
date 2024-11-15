@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
+    scripts::Script,
     types::{GlobalName, NamespacedType, StringName, Var, VarRegisters},
     Environment,
 };
@@ -8,6 +9,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Basic(BasicNode),
+    Script(ScriptNode),
 }
 
 #[derive(Debug, Clone)]
@@ -43,6 +45,13 @@ pub struct BasicNode {
     pub inputs: VarRegisters,
     pub outputs: VarRegisters,
     pub logic: BasicNodeLogic,
+}
+
+#[derive(Clone)]
+pub struct ScriptNode {
+    pub name: GlobalName,
+    pub func: StringName,
+    pub script: Arc<Script>,
 }
 
 pub trait NodeData {
@@ -85,10 +94,39 @@ impl NodeData for BasicNode {
     }
 }
 
+impl NamespacedType for ScriptNode {
+    fn get_name(&self) -> GlobalName {
+        self.name.clone()
+    }
+}
+
+impl NodeData for ScriptNode {
+    fn execute(
+        &self,
+        env: Arc<Environment>,
+        inputs: VarRegisters,
+    ) -> Result<VarRegisters, NodeError> {
+        env.logger
+            .debug(format!("Executing script node: {:?}", self.name));
+
+        self.script
+            .call_func(self.func.clone(), env, inputs, &mut Vec::new())
+    }
+
+    fn get_inputs(&self) -> Vec<StringName> {
+        Vec::new()
+    }
+
+    fn get_outputs(&self) -> Vec<StringName> {
+        Vec::new()
+    }
+}
+
 impl NamespacedType for Node {
     fn get_name(&self) -> GlobalName {
         match self {
             Node::Basic(basic_node) => basic_node.get_name(),
+            Node::Script(script_node) => script_node.get_name(),
         }
     }
 }
@@ -101,18 +139,21 @@ impl NodeData for Node {
     ) -> Result<VarRegisters, NodeError> {
         match self {
             Node::Basic(basic_node) => basic_node.execute(env, inputs),
+            Node::Script(script_node) => script_node.execute(env, inputs),
         }
     }
 
     fn get_inputs(&self) -> Vec<StringName> {
         match self {
             Node::Basic(basic_node) => basic_node.get_inputs(),
+            Node::Script(script_node) => script_node.get_inputs(),
         }
     }
 
     fn get_outputs(&self) -> Vec<StringName> {
         match self {
             Node::Basic(basic_node) => basic_node.get_outputs(),
+            Node::Script(script_node) => script_node.get_outputs(),
         }
     }
 }
@@ -124,6 +165,20 @@ impl std::fmt::Debug for BasicNode {
             .field("inputs", &self.inputs)
             .field("outputs", &self.outputs)
             .finish()
+    }
+}
+
+impl std::fmt::Debug for ScriptNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ScriptNode")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+impl PartialEq for ScriptNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
     }
 }
 

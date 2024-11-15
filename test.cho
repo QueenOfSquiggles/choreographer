@@ -1,0 +1,35 @@
+(
+    global_name: "test",
+    funcs: [
+        (
+            "main", FunctionProto(
+                entry: 2,
+                nodes: [
+                    "std.math.add",
+                    "std.math.subtract",
+                    "std.math.add",
+                ],
+                connections: [
+                    ConnectionProto(
+                        from: 0,
+                        to: 1,
+                        to_param: "b",
+                        from_param: "c",                
+                    ),
+                    ConnectionProto(
+                        from: 0,
+                        to: 2,
+                        to_param: "b",
+                        from_param: "c",                
+                    ),
+                    ConnectionProto(
+                        from: 1,
+                        to: 2,
+                        to_param: "a",
+                        from_param: "c",                
+                    ),
+                ],
+            )
+        )
+    ],
+)

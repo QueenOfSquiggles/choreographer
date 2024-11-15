@@ -12,26 +12,26 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct Script {
-    name: GlobalName,
-    funcs: HashMap<StringName, Function>,
+    pub name: GlobalName,
+    pub funcs: HashMap<StringName, Function>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Function {
     // TODO: refactor node storage to store each unique node on the script and only store names on the function itself, which should reduce memory usage
-    nodes: Vec<FunctionNode>,
-    entry: usize,
-    routing: Vec<Connection>,
+    pub nodes: Vec<FunctionNode>,
+    pub entry: usize,
+    pub routing: Vec<Connection>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Connection {
     /// Cached value for this connection
-    value: Var,
-    from: usize,
-    to: usize,
-    from_param: StringName,
-    to_param: StringName,
+    pub value: Var,
+    pub from: usize,
+    pub to: usize,
+    pub from_param: StringName,
+    pub to_param: StringName,
 }
 
 #[derive(Clone, PartialEq)]
@@ -113,6 +113,7 @@ impl Script {
             return Err(NodeError::Unhandled(format!("Failed to find entry node for function {:?}::{:?} at index {} of node array with {} elements", self.name, func_name, func.entry, func.nodes.len())));
         };
         call_stack.push(entry.clone());
+
         while !call_stack.is_empty() {
             // clean call stack
             Self::purge_duplicate_calls(call_stack, &env);
@@ -159,6 +160,10 @@ impl Script {
                 env.logger.debug(format!("Pushing node: {:?}", node));
                 call_stack.push(node.clone());
             }
+
+            // debug frame connection data
+            env.logger
+                .debug(format!("Frame connection data \n{:#?}", func.routing));
         }
 
         Ok(blackboard.clone())
@@ -229,8 +234,7 @@ impl Script {
         let invalid_inputs = func
             .routing
             .iter()
-            .filter(|p| p.to == target)
-            .filter(|p| p.value == Var::Null)
+            .filter(|p| p.to == target && p.value == Var::Null)
             .collect::<Vec<_>>();
         if invalid_inputs.is_empty() {
             return None;
@@ -249,14 +253,17 @@ impl Script {
         env.logger
             .debug(format!("Executing {:?} with inputs: \n{:#?}", node, inputs));
         let next_frame = node.node.execute(env.clone(), inputs)?;
+
         let mut outputs = func
             .routing
             .iter_mut()
             .filter(|p| p.from == node.index)
             .collect::<Vec<_>>();
+
         let mut results = FrameResults::default();
+
         for (key, var) in &next_frame.0 {
-            for out in &mut outputs {
+            for out in outputs.iter_mut() {
                 if let Var::Execution(enabled) = var {
                     if *enabled {
                         results.next_nodes.push(out.to);

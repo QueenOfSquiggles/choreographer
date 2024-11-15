@@ -10,11 +10,10 @@
         license: "MIT + Apache 2.0",
     ),
     executable: Some((
-        entry: "main",
+        entry: "test",
         start_frame_data: {
-            "c": Num(3.1415),
-            "a": Bool(true),
-            "b": String("A string"),
+            "a": Num(3.0),
+            "b": Num(4.0),
         },
     )),
 )
