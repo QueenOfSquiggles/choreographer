@@ -80,7 +80,7 @@ fn cmd_run(mut env: Environment, entry: Option<String>, dump_env: bool) {
     }
     match output {
         Ok(last_frame) => {
-            if !last_frame.is_empty() {
+            if !last_frame.0.is_empty() {
                 env.logger
                     .info("Exited successfully with dangling frame data");
                 env.logger.info(format!("{:#?}", last_frame));

@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use cho_lib::{
     nodes::{Node, NodeData, NodeError},
-    types::{GlobalName, StringName, Var},
+    types::{GlobalName, Var, VarRegisters},
     Environment,
 };
 use serde::{Deserialize, Serialize};
@@ -36,7 +36,7 @@ impl Execution {
         }
     }
 
-    pub fn run(&mut self) -> Result<HashMap<StringName, Var>, (NodeError, Vec<Arc<Node>>)> {
+    pub fn run(&mut self) -> Result<VarRegisters, (NodeError, Vec<Arc<Node>>)> {
         let Some(entry) = self.env.nodes.get(&self.entry) else {
             return Err((NodeError::TypeNotFound {
                 name: self.entry.clone(),
@@ -47,10 +47,10 @@ impl Execution {
         self.call_stack.push(entry);
 
         let aenv = Arc::new(self.env.clone());
-        let mut frame_data = HashMap::<StringName, Var>::new();
+        let mut frame_data = VarRegisters::new();
         if let Some(exec_data) = &self.config.executable {
             for (k, v) in &exec_data.start_frame_data {
-                frame_data.insert(k.clone().into(), v.clone());
+                frame_data.0.insert(k.clone().into(), v.clone());
             }
         }
 

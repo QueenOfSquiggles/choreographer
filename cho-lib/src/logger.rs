@@ -20,6 +20,10 @@ impl Logger {
                 }
             }
         }
+        #[cfg(test)]
+        {
+            log::set_max_level(log::LevelFilter::Debug);
+        }
         Self { file }
     }
 
@@ -51,6 +55,7 @@ impl Logger {
 
     fn emit_to_file(&self, msg: &String) {
         if cfg!(test) {
+            eprintln!("{msg}");
             return;
         }
         let Ok(mut file) = OpenOptions::new()

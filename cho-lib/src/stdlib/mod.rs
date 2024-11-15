@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::{
     nodes::{BasicNode, BasicNodeLogic, Node, NodeError},
-    types::{GlobalName, StringName, TypeRegistry, Var},
+    types::{GlobalName, StringName, TypeRegistry, Var, VarRegisters},
 };
 
 pub mod console;
@@ -23,13 +23,13 @@ fn add_basic(
     outputs: impl IntoIterator<Item = (&'static str, Var)>,
     logic: BasicNodeLogic,
 ) {
-    let mut input_map = HashMap::new();
-    let mut output_map = HashMap::new();
+    let mut input_map = VarRegisters::new();
+    let mut output_map = VarRegisters::new();
     for (k, v) in inputs.into_iter() {
-        input_map.insert(k.into(), v);
+        input_map.0.insert(k.into(), v);
     }
     for (k, v) in outputs.into_iter() {
-        output_map.insert(k.into(), v);
+        output_map.0.insert(k.into(), v);
     }
     reg.register(Node::Basic(BasicNode {
         name,
@@ -41,13 +41,13 @@ fn add_basic(
 
 fn get_var(
     name: &GlobalName,
-    inputs: &HashMap<StringName, Var>,
+    inputs: &VarRegisters,
     field: impl Into<StringName>,
 ) -> Result<Var, NodeError> {
     let sn: StringName = field.into();
-    let var = inputs.get(&sn).cloned().unwrap_or_default();
+    let var = inputs.0.get(&sn).cloned().unwrap_or_default();
     if var == Var::Null {
-        return Err(NodeError::NullExecption {
+        return Err(NodeError::NullException {
             name: name.clone(),
             arg: sn.into(),
             msg: "Field was found null".into(),
@@ -58,7 +58,7 @@ fn get_var(
 
 fn get_var_string(
     name: &GlobalName,
-    inputs: &HashMap<StringName, Var>,
+    inputs: &VarRegisters,
     field: StringName,
 ) -> Result<String, NodeError> {
     let var = get_var(name, inputs, field.clone())?;
@@ -76,7 +76,7 @@ fn get_var_string(
 
 fn get_var_bool(
     name: &GlobalName,
-    inputs: &HashMap<StringName, Var>,
+    inputs: &VarRegisters,
     field: StringName,
 ) -> Result<bool, NodeError> {
     let var = get_var(name, inputs, field.clone())?;
@@ -94,7 +94,7 @@ fn get_var_bool(
 
 fn get_var_number(
     name: &GlobalName,
-    inputs: &HashMap<StringName, Var>,
+    inputs: &VarRegisters,
     field: StringName,
 ) -> Result<f64, NodeError> {
     let var = get_var(name, inputs, field.clone())?;

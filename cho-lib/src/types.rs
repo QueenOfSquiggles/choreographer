@@ -11,6 +11,9 @@ pub struct Namespace(pub StringName);
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct TypeName(pub StringName);
 
+#[derive(PartialEq, Clone, Debug, Default)]
+pub struct VarRegisters(pub HashMap<StringName, Var>);
+
 #[derive(Clone, PartialEq, Default, Debug, Serialize, Deserialize)]
 pub enum Var {
     #[default]
@@ -32,6 +35,12 @@ pub trait NamespacedType {
 #[derive(Debug, Clone)]
 pub struct TypeRegistry<T: NamespacedType + Clone> {
     types: HashMap<Namespace, HashMap<TypeName, Arc<T>>>,
+}
+
+impl VarRegisters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 impl<T: NamespacedType + Clone> std::default::Default for TypeRegistry<T> {

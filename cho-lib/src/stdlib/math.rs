@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     nodes::{BasicNodeLogic, Node, NodeError},
-    types::{GlobalName, StringName, TypeRegistry, Var},
+    types::{GlobalName, StringName, TypeRegistry, Var, VarRegisters},
     Environment,
 };
 
@@ -39,55 +39,52 @@ pub fn register(registry: &mut TypeRegistry<Node>) {
     );
 }
 
-fn node_std_add(
-    _env: Arc<Environment>,
-    inputs: HashMap<StringName, Var>,
-) -> Result<HashMap<StringName, Var>, NodeError> {
+fn node_std_add(_env: Arc<Environment>, inputs: VarRegisters) -> Result<VarRegisters, NodeError> {
     let name = GlobalName::from_path("std.math.add");
     let a = get_var_number(&name, &inputs, "a".into())?;
     let b = get_var_number(&name, &inputs, "b".into())?;
-    let mut out = HashMap::new();
-    out.insert("c".into(), Var::Num(a + b));
+    let mut out = VarRegisters::new();
+    out.0.insert("c".into(), Var::Num(a + b));
     Ok(out)
 }
 
 fn node_std_subtract(
     _env: Arc<Environment>,
-    inputs: HashMap<StringName, Var>,
-) -> Result<HashMap<StringName, Var>, NodeError> {
-    let name = GlobalName::from_path("std.math.add");
+    inputs: VarRegisters,
+) -> Result<VarRegisters, NodeError> {
+    let name = GlobalName::from_path("std.math.subtract");
     let a = get_var_number(&name, &inputs, "a".into())?;
     let b = get_var_number(&name, &inputs, "b".into())?;
-    let mut out = HashMap::new();
-    out.insert("c".into(), Var::Num(a - b));
+    let mut out = VarRegisters::new();
+    out.0.insert("c".into(), Var::Num(a - b));
     Ok(out)
 }
 
 fn node_std_multiply(
     _env: Arc<Environment>,
-    inputs: HashMap<StringName, Var>,
-) -> Result<HashMap<StringName, Var>, NodeError> {
-    let name = GlobalName::from_path("std.math.add");
+    inputs: VarRegisters,
+) -> Result<VarRegisters, NodeError> {
+    let name = GlobalName::from_path("std.math.multiply");
     let a = get_var_number(&name, &inputs, "a".into())?;
     let b = get_var_number(&name, &inputs, "b".into())?;
-    let mut out = HashMap::new();
-    out.insert("c".into(), Var::Num(a * b));
+    let mut out = VarRegisters::new();
+    out.0.insert("c".into(), Var::Num(a * b));
     Ok(out)
 }
 
 fn node_std_divide(
     _env: Arc<Environment>,
-    inputs: HashMap<StringName, Var>,
-) -> Result<HashMap<StringName, Var>, NodeError> {
-    let name = GlobalName::from_path("std.math.add");
+    inputs: VarRegisters,
+) -> Result<VarRegisters, NodeError> {
+    let name = GlobalName::from_path("std.math.divide");
     let a = get_var_number(&name, &inputs, "a".into())?;
     let b = get_var_number(&name, &inputs, "b".into())?;
-    let mut out = HashMap::new();
+    let mut out = VarRegisters::new();
     if b == 0.0 {
         return Err(NodeError::Unhandled(
             "Math error. Cannot divide by zero".into(),
         ));
     }
-    out.insert("c".into(), Var::Num(a / b));
+    out.0.insert("c".into(), Var::Num(a / b));
     Ok(out)
 }

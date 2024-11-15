@@ -1,7 +1,7 @@
 use std::{fs::File, path::Path};
 
 use cho_lib::logger::Logger;
-use ron::{extensions::Extensions, ser::PrettyConfig};
+use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 
 use crate::exec::ExecutableConfig;

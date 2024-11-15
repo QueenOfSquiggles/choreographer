@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     nodes::{BasicNodeLogic, Node, NodeError},
-    types::{GlobalName, StringName, TypeRegistry, Var},
+    types::{GlobalName, StringName, TypeRegistry, Var, VarRegisters},
     Environment,
 };
 
@@ -18,11 +18,8 @@ pub fn register(registry: &mut TypeRegistry<Node>) {
     );
 }
 
-fn node_std_print(
-    env: Arc<Environment>,
-    inputs: HashMap<StringName, Var>,
-) -> Result<HashMap<StringName, Var>, NodeError> {
+fn node_std_print(env: Arc<Environment>, inputs: VarRegisters) -> Result<VarRegisters, NodeError> {
     let text = get_var_string(&GlobalName::from_path("std.print"), &inputs, "text".into())?;
     env.logger.info(format!("{text}"));
-    Ok(HashMap::new())
+    Ok(VarRegisters::default())
 }

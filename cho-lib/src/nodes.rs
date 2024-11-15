@@ -1,14 +1,13 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
-    types::{GlobalName, NamespacedType, StringName, Var},
+    types::{GlobalName, NamespacedType, StringName, Var, VarRegisters},
     Environment,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Basic(BasicNode),
-    Composite(CompositeNode),
 }
 
 #[derive(Debug, Clone)]
@@ -19,7 +18,7 @@ pub enum NodeError {
         name: GlobalName,
         msg: String,
     },
-    NullExecption {
+    NullException {
         name: GlobalName,
         arg: StringName,
         msg: String,
@@ -35,19 +34,14 @@ pub enum NodeError {
 
 #[derive(Clone)]
 pub struct BasicNodeLogic(
-    pub  Arc<
-        dyn Fn(
-            Arc<Environment>,
-            HashMap<StringName, Var>,
-        ) -> Result<HashMap<StringName, Var>, NodeError>,
-    >,
+    pub Arc<dyn Fn(Arc<Environment>, VarRegisters) -> Result<VarRegisters, NodeError>>,
 );
 
 #[derive(Clone)]
 pub struct BasicNode {
     pub name: GlobalName,
-    pub inputs: HashMap<String, Var>,
-    pub outputs: HashMap<String, Var>,
+    pub inputs: VarRegisters,
+    pub outputs: VarRegisters,
     pub logic: BasicNodeLogic,
 }
 
@@ -55,16 +49,16 @@ pub trait NodeData {
     fn execute(
         &self,
         env: Arc<Environment>,
-        inputs: HashMap<StringName, Var>,
-    ) -> Result<HashMap<StringName, Var>, NodeError>;
+        inputs: VarRegisters,
+    ) -> Result<VarRegisters, NodeError>;
+    fn get_inputs(&self) -> Vec<StringName>;
+    fn get_outputs(&self) -> Vec<StringName>;
 }
 
-#[derive(Debug, Clone)]
-pub struct CompositeNode {
-    pub name: GlobalName,
-    pub nodes: Vec<GlobalName>,
-    pub entry: GlobalName,
-    pub outputs: HashMap<GlobalName, HashMap<StringName, (GlobalName, StringName)>>,
+impl PartialEq for BasicNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl NamespacedType for BasicNode {
@@ -77,31 +71,17 @@ impl NodeData for BasicNode {
     fn execute(
         &self,
         env: Arc<Environment>,
-        inputs: HashMap<StringName, Var>,
-    ) -> Result<HashMap<StringName, Var>, NodeError> {
+        inputs: VarRegisters,
+    ) -> Result<VarRegisters, NodeError> {
         self.logic.0(env, inputs)
     }
-}
 
-impl NamespacedType for CompositeNode {
-    fn get_name(&self) -> GlobalName {
-        self.name.clone()
+    fn get_inputs(&self) -> Vec<StringName> {
+        self.inputs.0.keys().cloned().collect()
     }
-}
 
-impl NodeData for CompositeNode {
-    fn execute(
-        &self,
-        env: Arc<Environment>,
-        inputs: HashMap<StringName, Var>,
-    ) -> Result<HashMap<StringName, Var>, NodeError> {
-        let Some(entry) = env.nodes.get(&self.entry) else {
-            return Err(NodeError::TypeNotFound {
-                name: self.entry.clone(),
-                msg: "Failed to find composite node's entry node".into(),
-            });
-        };
-        entry.execute(env, inputs)
+    fn get_outputs(&self) -> Vec<StringName> {
+        self.outputs.0.keys().cloned().collect()
     }
 }
 
@@ -109,7 +89,6 @@ impl NamespacedType for Node {
     fn get_name(&self) -> GlobalName {
         match self {
             Node::Basic(basic_node) => basic_node.get_name(),
-            Node::Composite(composite_node) => composite_node.get_name(),
         }
     }
 }
@@ -118,11 +97,22 @@ impl NodeData for Node {
     fn execute(
         &self,
         env: Arc<Environment>,
-        inputs: HashMap<StringName, Var>,
-    ) -> Result<HashMap<StringName, Var>, NodeError> {
+        inputs: VarRegisters,
+    ) -> Result<VarRegisters, NodeError> {
         match self {
             Node::Basic(basic_node) => basic_node.execute(env, inputs),
-            Node::Composite(composite_node) => composite_node.execute(env, inputs),
+        }
+    }
+
+    fn get_inputs(&self) -> Vec<StringName> {
+        match self {
+            Node::Basic(basic_node) => basic_node.get_inputs(),
+        }
+    }
+
+    fn get_outputs(&self) -> Vec<StringName> {
+        match self {
+            Node::Basic(basic_node) => basic_node.get_outputs(),
         }
     }
 }
@@ -139,11 +129,7 @@ impl std::fmt::Debug for BasicNode {
 
 impl BasicNodeLogic {
     pub fn new(
-        func_ref: impl Fn(
-                Arc<Environment>,
-                HashMap<StringName, Var>,
-            ) -> Result<HashMap<StringName, Var>, NodeError>
-            + 'static,
+        func_ref: impl Fn(Arc<Environment>, VarRegisters) -> Result<VarRegisters, NodeError> + 'static,
     ) -> Self {
         Self(Arc::new(func_ref))
     }
