@@ -21,25 +21,27 @@ pub struct Environment {
     pub logger: Logger,
 }
 
-pub fn construct_environment() -> Environment {
-    #[cfg(feature = "logging")]
-    {
-        // initialize the logging utility
-        colog::init();
+impl Environment {
+    pub fn new() -> Self {
+        let mut cho_env = Self::new_empty();
+
+        for (key, value) in env::vars() {
+            if key.to_lowercase().starts_with("cho_") && !value.to_lowercase().contains("false") {
+                cho_env.flags.push(key.into());
+            }
+        }
+        if cfg!(feature = "stdlib") {
+            stdlib::register(&mut cho_env.nodes);
+        }
+        cho_env
     }
-    let mut cho_env = Environment {
-        flags: Vec::new(),
-        nodes: TypeRegistry::default(),
-        scripts: TypeRegistry::default(),
-        logger: Logger::new("choreoghrapher.log".into()),
-    };
-    for (key, value) in env::vars() {
-        if key.to_lowercase().starts_with("cho_") && !value.to_lowercase().contains("false") {
-            cho_env.flags.push(key.into());
+
+    pub fn new_empty() -> Self {
+        Self {
+            flags: Vec::new(),
+            nodes: TypeRegistry::default(),
+            scripts: TypeRegistry::default(),
+            logger: Logger::new("choreoghrapher.log".into()),
         }
     }
-    if cfg!(feature = "stdlib") {
-        stdlib::register(&mut cho_env.nodes);
-    }
-    cho_env
 }

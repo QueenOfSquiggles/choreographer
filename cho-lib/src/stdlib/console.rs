@@ -12,7 +12,7 @@ pub fn register(registry: &mut TypeRegistry<Node>) {
     add_basic(
         registry,
         GlobalName::from_path("std.print"),
-        vec![],
+        vec![("exec", Var::Execution(false))],
         vec![],
         BasicNodeLogic::new(node_std_print),
     );

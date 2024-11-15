@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::Write, path::PathBuf};
+use std::{fs::OpenOptions, io::Write, path::PathBuf, sync::RwLock};
 
 use chrono::Local;
 use log::{debug, error, info, trace, warn};
@@ -10,6 +10,23 @@ pub struct Logger {
 
 impl Logger {
     pub fn new(file: PathBuf) -> Self {
+        #[cfg(feature = "logging")]
+        {
+            // Uses a static bool entry to determine whether this is initialized
+            // RW lock is used to make reading (seeing that it's already initialized) cheaper than writing (initializing)
+            static INIT: RwLock<bool> = RwLock::new(false);
+            if let Ok(r) = INIT.read() {
+                if !(*r) {
+                    drop(r);
+                    if let Ok(mut wr) = INIT.try_write() {
+                        *wr = true;
+                        // initialize the logging utility
+                        colog::init();
+                    }
+                }
+            }
+        }
+
         #[cfg(not(test))]
         {
             use std::fs::File;

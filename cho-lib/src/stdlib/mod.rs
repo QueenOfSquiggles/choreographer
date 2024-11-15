@@ -7,6 +7,7 @@ use crate::{
 };
 
 pub mod console;
+pub mod control;
 pub mod math;
 pub mod vars;
 
@@ -14,6 +15,7 @@ pub fn register(registry: &mut TypeRegistry<Node>) {
     console::register(registry);
     math::register(registry);
     vars::register(registry);
+    control::register(registry);
 }
 
 fn add_basic(

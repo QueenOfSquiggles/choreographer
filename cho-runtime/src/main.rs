@@ -1,5 +1,4 @@
 use cho_lib::{
-    construct_environment,
     types::{GlobalName, NamespacedType},
     Environment,
 };
@@ -37,7 +36,7 @@ const FLAG_DUMP_ENV: &'static str = "CHO_DUMP_ENV";
 
 fn main() {
     let cli = CliData::parse();
-    let env = construct_environment();
+    let env = Environment::new();
     let Some(cmd) = cli.command else {
         env.logger
             .warn("No commands provided. Refer to the help page for available commands");

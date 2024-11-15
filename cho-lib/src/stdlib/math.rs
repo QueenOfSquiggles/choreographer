@@ -88,3 +88,102 @@ fn node_std_divide(
     out.0.insert("c".into(), Var::Num(a / b));
     Ok(out)
 }
+
+#[cfg(test)]
+mod test {
+    use core::panic;
+    use std::{collections::HashMap, sync::Arc};
+
+    use crate::{
+        nodes::NodeError,
+        types::{GlobalName, Var, VarRegisters},
+        Environment,
+    };
+
+    use super::{node_std_add, node_std_divide, node_std_multiply, node_std_subtract};
+    fn get_env() -> Arc<Environment> {
+        Arc::new(Environment::new_empty())
+    }
+    fn get_inputs(a: f64, b: f64) -> VarRegisters {
+        VarRegisters(HashMap::from([
+            ("a".into(), Var::Num(a)),
+            ("b".into(), Var::Num(b)),
+        ]))
+    }
+
+    fn get_output(result: Result<VarRegisters, NodeError>) -> Result<f64, NodeError> {
+        if let Err(er) = result {
+            return Err(er);
+        }
+        let reg = result.unwrap();
+        let Some(var) = reg.0.get(&"c".into()) else {
+            return Err(NodeError::NullException {
+                name: GlobalName::from_path("test"),
+                arg: "c".into(),
+                msg: "Failed to find output".into(),
+            });
+        };
+        if let Var::Num(x) = var {
+            return Ok(*x);
+        }
+        Err(NodeError::MismatchedData {
+            name: GlobalName::from_path("test"),
+            arg: "c".into(),
+            expected: Var::Num(0.0),
+            received: var.clone(),
+            msg: "Mismatched output data".into(),
+        })
+    }
+
+    fn test_math(
+        a: f64,
+        b: f64,
+        c: f64,
+        func: impl Fn(Arc<Environment>, VarRegisters) -> Result<VarRegisters, NodeError>,
+    ) {
+        eprintln!("Testing {a} (op) {b} = {c}");
+
+        let res = func(get_env(), get_inputs(a, b));
+        match get_output(res) {
+            Ok(val) => assert_eq!(val, c),
+            Err(err) => panic!("{:#?}", err),
+        }
+    }
+
+    #[test]
+    fn test_add() {
+        test_math(1.0, 1.0, 2.0, node_std_add);
+        test_math(0.0, 0.0, 0.0, node_std_add);
+        test_math(5.0, -3.0, 2.0, node_std_add);
+        test_math(1000.0, 2536.0, (1000.0 + 2536.0), node_std_add);
+    }
+    #[test]
+    fn test_sub() {
+        test_math(1.0, 1.0, 0.0, node_std_subtract);
+        test_math(0.0, 5.0, -5.0, node_std_subtract);
+        test_math(5.0, -3.0, 8.0, node_std_subtract);
+        test_math(1000.0, 2536.0, (1000.0 - 2536.0), node_std_subtract);
+    }
+
+    #[test]
+    fn test_mul() {
+        test_math(1.0, 1.0, 1.0, node_std_multiply);
+        test_math(0.0, 5.0, 0.0, node_std_multiply);
+        test_math(5.0, -3.0, -15.0, node_std_multiply);
+        test_math(1000.0, 2536.0, (1000.0 * 2536.0), node_std_multiply);
+    }
+
+    #[test]
+    fn test_div() {
+        test_math(1.0, 1.0, 1.0, node_std_divide);
+        test_math(0.0, 3.0, 0.0, node_std_divide);
+        test_math(5.0, -3.0, 5.0 / -3.0, node_std_divide);
+        test_math(1000.0, 2536.0, (1000.0 / 2536.0), node_std_divide);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_div_by_zero() {
+        test_math(1.0, 0.0, 0.0, node_std_divide);
+    }
+}

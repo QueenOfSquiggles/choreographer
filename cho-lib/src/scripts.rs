@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, VecDeque},
-    fmt::{format, Debug, Pointer},
+    fmt::Debug,
     sync::Arc,
 };
 
@@ -14,15 +14,14 @@ use crate::{
 pub struct Script {
     name: GlobalName,
     funcs: HashMap<StringName, Function>,
-    blackboard: VarRegisters,
 }
 
 #[derive(Debug, Clone)]
 pub struct Function {
+    // TODO: refactor node storage to store each unique node on the script and only store names on the function itself, which should reduce memory usage
     nodes: Vec<FunctionNode>,
     entry: usize,
     routing: Vec<Connection>,
-    // TODO: maybe it's better to cache outputs from each node in the function and dynamically call back nodes that don't have an execution path so long as their outputs are connected. Ideally the caching is scrapped after execution, but maybe a flag to keep it (faster exec, more memory consumption) could be nice
 }
 
 #[derive(Debug, Clone)]
@@ -93,7 +92,7 @@ impl NamespacedType for Script {
 
 impl Script {
     pub fn call_func(
-        &mut self,
+        &self,
         func_name: StringName,
         env: Arc<Environment>,
         inputs: VarRegisters,
@@ -109,7 +108,7 @@ impl Script {
             "calling function {:?} with inputs: \n{:#?}",
             func_name, inputs
         ));
-        self.blackboard = inputs;
+        let mut blackboard = inputs;
         let Some(entry) = func.nodes.get(func.entry) else {
             return Err(NodeError::Unhandled(format!("Failed to find entry node for function {:?}::{:?} at index {} of node array with {} elements", self.name, func_name, func.entry, func.nodes.len())));
         };
@@ -138,7 +137,7 @@ impl Script {
             }
 
             // generate valid input registers
-            let inputs = self.get_input_register(func, &top, &self.blackboard)?;
+            let inputs = self.get_input_register(func, &top, &blackboard)?;
 
             // execute the current node
             let results = self.execute_frame(func, &func_name, &env, inputs, &top)?;
@@ -147,11 +146,11 @@ impl Script {
 
             // merge blackboards
             for entry in results.blackboard.0 {
-                self.blackboard.0.insert(entry.0, entry.1);
+                blackboard.0.insert(entry.0, entry.1);
             }
 
             env.logger
-                .debug(format!("Current blackboard: {:?}", self.blackboard));
+                .debug(format!("Current blackboard: {:?}", blackboard));
 
             for index in results.next_nodes {
                 let Some(node) = func.nodes.get(func.entry) else {
@@ -162,7 +161,7 @@ impl Script {
             }
         }
 
-        Ok(self.blackboard.clone())
+        Ok(blackboard.clone())
     }
 
     fn purge_duplicate_calls(call_stack: &mut Vec<FunctionNode>, env: &Arc<Environment>) {
@@ -285,9 +284,43 @@ impl Debug for FunctionNode {
 mod test {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::types::{GlobalName, Var, VarRegisters};
+    use crate::{
+        types::{GlobalName, Var, VarRegisters},
+        Environment,
+    };
 
     use super::{Connection, Function, Script};
+
+    struct TestScript {
+        script: Script,
+        env: Environment,
+    }
+
+    fn get_test_script() -> TestScript {
+        let env = Environment::new();
+        let mut script = Script {
+            name: GlobalName::from_path("test.script"),
+            funcs: HashMap::new(),
+        };
+        script.funcs.insert(
+            "func".into(),
+            Function::new(
+                &env.nodes,
+                vec![
+                    GlobalName::from_path("std.math.add"),
+                    GlobalName::from_path("std.math.subtract"),
+                    GlobalName::from_path("std.math.add"),
+                ],
+                2,
+                vec![
+                    Connection::new(0, 1, "c", "b"), // 0:c => 1:b
+                    Connection::new(0, 2, "c", "b"), // 0:c => 2:b
+                    Connection::new(1, 2, "c", "a"), // 1:c => 2:a
+                ],
+            ),
+        );
+        TestScript { script, env }
+    }
 
     #[test]
     /// Test a simple script execution
@@ -307,43 +340,44 @@ mod test {
     ///
     /// where `a`, `b`, `c` are known variables
     /// and `x_`, `y_` are internal caches (non variables)
-    fn test_script() {
-        let env = crate::construct_environment();
-        let mut script = Script {
-            name: GlobalName::from_path("test.script"),
-            funcs: HashMap::new(),
-            blackboard: VarRegisters::default(),
-        };
-        script.funcs.insert(
+    fn test_script_simple_math() {
+        let test_script = get_test_script();
+
+        let result = test_script.script.call_func(
             "func".into(),
-            Function::new(
-                &env.nodes,
-                vec![
-                    GlobalName::from_path("std.math.add"),
-                    GlobalName::from_path("std.math.subtract"),
-                    GlobalName::from_path("std.math.add"),
-                ],
-                2,
-                vec![
-                    Connection::new(0, 1, "c", "b"), // 0:c => 1:b
-                    Connection::new(0, 2, "c", "b"), // 0:c => 2:b
-                    Connection::new(1, 2, "c", "a"), // 1:c => 2:a
-                ],
-            ),
+            Arc::new(test_script.env),
+            VarRegisters(HashMap::from([
+                ("a".into(), Var::Num(3.0)),
+                ("b".into(), Var::Num(4.0)),
+            ])),
+            &mut Vec::new(),
         );
-        let mut stack = Vec::new();
-        let mut inputs = HashMap::new();
-        inputs.insert("a".into(), Var::Num(3.0));
-        inputs.insert("b".into(), Var::Num(4.0));
-        let result = script.call_func(
-            "func".into(),
-            Arc::new(env),
-            VarRegisters(inputs),
-            &mut stack,
-        );
+
         eprintln!("{:#?}", result);
         assert!(result.is_ok());
         let output = result.unwrap();
         assert_eq!(output.0.get(&"c".into()).cloned(), Some(Var::Num(3.0)));
+    }
+
+    #[test]
+    /// Same general logic as [test_script_simple_math], but repeating the function call 5 times, to validate that these function calls do not leave any lasting effects on the script object itself. Specifically because it is called as an &self instead of an &mut self, this should be impossible, but for surety, this test exists.
+    fn test_script_immutable() {
+        let test_script = get_test_script();
+        let env = Arc::new(test_script.env);
+        for i in 0..5 {
+            let result = test_script.script.call_func(
+                "func".into(),
+                env.clone(),
+                VarRegisters(HashMap::from([
+                    ("a".into(), Var::Num(3.0)),
+                    ("b".into(), Var::Num(4.0)),
+                ])),
+                &mut Vec::new(),
+            );
+            eprintln!("Calling func iter: {i}");
+            assert!(result.is_ok());
+            let output = result.unwrap();
+            assert_eq!(output.0.get(&"c".into()).cloned(), Some(Var::Num(3.0)));
+        }
     }
 }
